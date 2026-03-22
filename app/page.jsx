@@ -3,23 +3,23 @@ import { useState } from "react";
 
 // ─── MOCK DATA ────────────────────────────────────────────────────────────────
 const EMPLOYEES = [
-  { id: "e1", name: "Анна Соколова", role: "Официант", initials: "АС", rating: 4.9, txCount: 312, totalTips: 84200, bio: "Коплю на путешествие в Японию 🌸", avgTip: 270 },
-  { id: "e2", name: "Иван Петров", role: "Бармен", initials: "ИП", rating: 4.7, txCount: 198, totalTips: 53600, bio: "Рад помочь с выбором коктейля", avgTip: 220 },
-  { id: "e3", name: "Мария Кузнецова", role: "Официант", initials: "МК", rating: 5.0, txCount: 401, totalTips: 112400, bio: "Стараюсь сделать ваш вечер незабываемым ✨", avgTip: 280 },
-  { id: "e4", name: "Дмитрий Волков", role: "Хостес", initials: "ДВ", rating: 4.8, txCount: 144, totalTips: 38900, bio: "", avgTip: 195 },
+  { id: "e1", name: "María González", role: "Mesonera", initials: "MG", rating: 4.9, txCount: 312, totalTips: 340.50, bio: "Hago de tu visita una experiencia inolvidable 🌟", avgTip: 3.20 },
+  { id: "e2", name: "Carlos Pérez", role: "Bartender", initials: "CP", rating: 4.7, txCount: 198, totalTips: 182.00, bio: "Te ayudo a elegir el cóctel perfecto", avgTip: 2.80 },
+  { id: "e3", name: "Ana Rodríguez", role: "Mesonera", initials: "AR", rating: 5.0, txCount: 401, totalTips: 480.75, bio: "Cada detalle importa para que disfrutes al máximo ✨", avgTip: 4.10 },
+  { id: "e4", name: "Diego Hernández", role: "Anfitrión", initials: "DH", rating: 4.8, txCount: 144, totalTips: 95.20, bio: "", avgTip: 2.50 },
 ];
 
 const TRANSACTIONS = [
-  { id: "t1", empId: "e3", amount: 500, billAmount: 4800, pct: 10, comment: "Всё идеально, спасибо!", date: "2026-02-26T20:14", rating: 5 },
-  { id: "t2", empId: "e1", amount: 300, billAmount: 3200, pct: 9, comment: "Отличный сервис", date: "2026-02-26T19:40", rating: 5 },
-  { id: "t3", empId: "e2", amount: 200, billAmount: 2100, pct: null, comment: "", date: "2026-02-26T18:55", rating: 4 },
-  { id: "t4", empId: "e1", amount: 150, billAmount: 1800, pct: 8, comment: "", date: "2026-02-26T17:20", rating: 4 },
-  { id: "t5", empId: "e3", amount: 400, billAmount: 3900, pct: 10, comment: "Мария — лучший официант!", date: "2026-02-25T21:05", rating: 5 },
-  { id: "t6", empId: "e4", amount: 250, billAmount: null, pct: null, comment: "Приятная атмосфера", date: "2026-02-25T20:30", rating: 5 },
+  { id: "t1", empId: "e3", amount: 8.00, billAmount: 55.00, pct: 15, comment: "¡Todo perfecto, muchas gracias!", date: "2026-02-26T20:14", rating: 5 },
+  { id: "t2", empId: "e1", amount: 5.00, billAmount: 42.00, pct: 12, comment: "Excelente servicio", date: "2026-02-26T19:40", rating: 5 },
+  { id: "t3", empId: "e2", amount: 3.00, billAmount: 28.00, pct: null, comment: "", date: "2026-02-26T18:55", rating: 4 },
+  { id: "t4", empId: "e1", amount: 2.50, billAmount: 25.00, pct: 10, comment: "", date: "2026-02-26T17:20", rating: 4 },
+  { id: "t5", empId: "e3", amount: 7.00, billAmount: 48.00, pct: 15, comment: "¡Ana es la mejor mesonera!", date: "2026-02-25T21:05", rating: 5 },
+  { id: "t6", empId: "e4", amount: 4.00, billAmount: null, pct: null, comment: "Ambiente muy agradable", date: "2026-02-25T20:30", rating: 5 },
 ];
 
-const fmt = (n) => n?.toLocaleString("ru-RU") + " ₽";
-const fmtDate = (d) => new Date(d).toLocaleString("ru-RU", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+const fmt = (n) => n == null ? "$0.00" : "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmtDate = (d) => d ? new Date(d).toLocaleString("es-VE", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : "—";
 
 // ─── MINI QR ──────────────────────────────────────────────────────────────────
 function QRSvg({ value, size = 100, light = false }) {
@@ -308,7 +308,7 @@ function TipPage({ employee, billAmount = 3200, onBack }) {
   const [step, setStep] = useState("tips"); // tips | review | success
   const [mode, setMode] = useState("pct"); // pct | fixed
   const [pct, setPct] = useState(10);
-  const [fixed, setFixed] = useState(300);
+  const [fixed, setFixed] = useState(5);
   const [customFixed, setCustomFixed] = useState("");
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
@@ -316,9 +316,9 @@ function TipPage({ employee, billAmount = 3200, onBack }) {
   const [platform, setPlatform] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const calcAmount = mode === "pct" ? Math.round(billAmount * pct / 100) : (customFixed ? parseInt(customFixed) || 0 : fixed);
+  const calcAmount = mode === "pct" ? Math.round(billAmount * pct / 100 * 100) / 100 : (customFixed ? parseFloat(customFixed) || 0 : fixed);
   const PCTS = [5, 10, 15, 20];
-  const FIXED = [100, 200, 300, 500, 1000];
+  const FIXED = [1, 2, 5, 10, 20];
 
   const pay = () => {
     setLoading(true);
@@ -340,19 +340,19 @@ function TipPage({ employee, billAmount = 3200, onBack }) {
             <div className="flex items-center gap-8 mt-12" style={{ justifyContent: "center" }}>
               <Stars rating={employee.rating} />
               <span style={{ fontSize: 13, opacity: 0.9, fontWeight: 600 }}>{employee.rating}</span>
-              <span style={{ fontSize: 12, opacity: 0.6 }}>({employee.txCount} отзывов)</span>
+              <span style={{ fontSize: 12, opacity: 0.6 }}>({employee.txCount} reseñas)</span>
             </div>
           </div>
 
           <div className="tip-body">
             <div style={{ background: "#F8F9FB", borderRadius: 10, padding: "10px 14px", marginBottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span className="text-sm text-2">Сумма счёта</span>
+              <span className="text-sm text-2">Total de la cuenta</span>
               <span className="font-600">{fmt(billAmount)}</span>
             </div>
 
             <div className="tab-row">
-              <button className={`tab-btn ${mode === "pct" ? "active" : ""}`} onClick={() => setMode("pct")}>% от счёта</button>
-              <button className={`tab-btn ${mode === "fixed" ? "active" : ""}`} onClick={() => setMode("fixed")}>Фиксированно</button>
+              <button className={`tab-btn ${mode === "pct" ? "active" : ""}`} onClick={() => setMode("pct")}>% de la cuenta</button>
+              <button className={`tab-btn ${mode === "fixed" ? "active" : ""}`} onClick={() => setMode("fixed")}>Monto fijo</button>
             </div>
 
             {mode === "pct" ? (
@@ -366,71 +366,71 @@ function TipPage({ employee, billAmount = 3200, onBack }) {
                 <div className="amount-grid">
                   {FIXED.slice(0, 5).map(a => (
                     <button key={a} className={`amount-btn ${fixed === a && !customFixed ? "active" : ""}`} onClick={() => { setFixed(a); setCustomFixed(""); }}>
-                      {a} ₽
+                      ${a}
                     </button>
                   ))}
                 </div>
-                <input className="input" placeholder="Другая сумма, ₽" type="number" value={customFixed} onChange={e => setCustomFixed(e.target.value)} />
+                <input className="input" placeholder="Otro monto, $" type="number" value={customFixed} onChange={e => setCustomFixed(e.target.value)} />
               </>
             )}
 
             {calcAmount > 0 && (
               <div style={{ marginTop: 16, padding: "14px 16px", background: "#EBF0FF", borderRadius: 10, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span className="text-sm font-600 text-accent">Итого чаевые</span>
+                <span className="text-sm font-600 text-accent">Total propina</span>
                 <span style={{ fontFamily: "var(--font-display)", fontSize: 22, fontWeight: 700, color: "var(--c-accent)" }}>{fmt(calcAmount)}</span>
               </div>
             )}
 
             <button className="btn btn-primary btn-full btn-lg mt-16" onClick={pay} disabled={!calcAmount || loading}>
-              {loading ? <span style={{ display: "flex", alignItems: "center", gap: 8 }}><span style={{ width: 16, height: 16, border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "white", borderRadius: "50%", animation: "spin 0.6s linear infinite", display: "inline-block" }} />Обработка...</span> : `Оплатить ${calcAmount ? fmt(calcAmount) : ""}`}
+              {loading ? <span style={{ display: "flex", alignItems: "center", gap: 8 }}><span style={{ width: 16, height: 16, border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "white", borderRadius: "50%", animation: "spin 0.6s linear infinite", display: "inline-block" }} />Procesando...</span> : `Pagar ${calcAmount ? fmt(calcAmount) : ""}`}
             </button>
-            <button className="btn btn-ghost btn-full mt-6" style={{ color: "var(--c-text-3)", fontSize: 12 }}>Без чаевых</button>
+            <button className="btn btn-ghost btn-full mt-6" style={{ color: "var(--c-text-3)", fontSize: 12 }}>Sin propina</button>
           </div>
           <div className="tip-footer">
-            <div className="text-xs text-3">🔒 Безопасная оплата · СБП, Карта, SberPay</div>
-            <div className="text-xs text-3 mt-4">Powered by <strong style={{ color: "var(--c-accent)" }}>ЧайВой</strong></div>
+            <div className="text-xs text-3">🔒 Pago seguro · Pago Móvil, Zelle, Binance</div>
+            <div className="text-xs text-3 mt-4">Powered by <strong style={{ color: "var(--c-accent)" }}>Propinero</strong></div>
           </div>
         </>}
 
         {step === "review" && (
           <div className="tip-body anim-fadeup" style={{ padding: "32px 28px" }}>
             <div className="success-check">🎉</div>
-            <div className="font-display font-700 text-xl text-center">{fmt(calcAmount)} отправлено!</div>
-            <div className="text-center text-sm text-2 mt-6">{employee.name} получит ваши чаевые</div>
+            <div className="font-display font-700 text-xl text-center">{fmt(calcAmount)} enviado!</div>
+            <div className="text-center text-sm text-2 mt-6">{employee.name} recibirá tu propina</div>
             <div className="divider" style={{ margin: "20px 0" }} />
-            <div className="text-sm font-600 mb-12 text-center">Как вам обслуживание?</div>
+            <div className="text-sm font-600 mb-12 text-center">¿Cómo fue el servicio?</div>
             <div className="flex gap-8" style={{ justifyContent: "center", marginBottom: 16 }}>
               {[1,2,3,4,5].map(s => (
                 <span key={s} style={{ fontSize: 32, cursor: "pointer", filter: s <= (hoverRating || rating) ? "none" : "grayscale(1)", transition: "transform 0.1s", transform: s <= (hoverRating || rating) ? "scale(1.2)" : "scale(1)" }}
                   onClick={() => setRating(s)} onMouseEnter={() => setHoverRating(s)} onMouseLeave={() => setHoverRating(0)}>⭐</span>
               ))}
             </div>
-            <textarea className="input textarea" placeholder="Комментарий (необязательно)..." value={comment} onChange={e => setComment(e.target.value)} style={{ marginBottom: 12 }} />
+            <textarea className="input textarea" placeholder="Comentario (opcional)..." value={comment} onChange={e => setComment(e.target.value)} style={{ marginBottom: 12 }} />
             {rating >= 4 && (
               <>
-                <div className="text-xs text-3 text-center mb-8">Оставьте отзыв и помогите ресторану:</div>
+                <div className="text-xs text-3 text-center mb-8">Deja una reseña y ayuda al restaurante:</div>
                 <div className="review-platforms">
-                  {[{ id: "yandex", label: "Яндекс Карты", emoji: "🗺", color: "#FF0000" }, { id: "2gis", label: "2ГИС", emoji: "🌐", color: "#29A645" }].map(p => (
+                  {[{ id: "google", label: "Google Maps", emoji: "🗺", color: "#4285F4" }, { id: "tripadvisor", label: "TripAdvisor", emoji: "🦉", color: "#00AA6C" }].map(p => (
                     <button key={p.id} className={`platform-btn ${platform === p.id ? "active" : ""}`} onClick={() => setPlatform(p.id)}>
                       <span style={{ fontSize: 18 }}>{p.emoji}</span>
                       <span>{p.label}</span>
-                      {platform === p.id && <span className="badge badge-blue" style={{ marginLeft: "auto" }}>Выбрано ✓</span>}
+                      {platform === p.id && <span className="badge badge-blue" style={{ marginLeft: "auto" }}>Seleccionado ✓</span>}
                     </button>
                   ))}
                 </div>
               </>
             )}
-            <button className="btn btn-primary btn-full btn-lg mt-16" onClick={finish}>Отправить{rating ? " отзыв" : ""}</button>
-            <button className="btn btn-ghost btn-full mt-6" style={{ fontSize: 12 }} onClick={finish}>Пропустить</button>
+            <button className="btn btn-primary btn-full btn-lg mt-16" onClick={finish}>Enviar{rating ? " reseña" : ""}</button>
+            <button className="btn btn-ghost btn-full mt-6" style={{ fontSize: 12 }} onClick={finish}>Omitir</button>
           </div>
         )}
 
         {step === "success" && (
           <div className="tip-body anim-fadeup" style={{ padding: "48px 28px", textAlign: "center" }}>
             <div style={{ width: 72, height: 72, background: "linear-gradient(135deg,#1A56DB,#0D9488)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, margin: "0 auto 20px" }}>✓</div>
-            <div className="font-display font-700 text-2xl" style={{ color: "var(--c-text)" }}>Спасибо!</div>
-            <div className="text-sm text-2 mt-8" style={{ lineHeight: 1.7 }}>Чаевые и отзыв отправлены.<br />Вы сделали вечер лучше ✨</div>
-            <button className="btn btn-secondary mt-24" onClick={onBack}>← Вернуться</button>
+            <div className="font-display font-700 text-2xl" style={{ color: "var(--c-text)" }}>¡Gracias!</div>
+            <div className="text-sm text-2 mt-8" style={{ lineHeight: 1.7 }}>Tu propina y reseña fueron enviadas.<br />Hiciste la noche mejor ✨</div>
+            <button className="btn btn-secondary mt-24" onClick={onBack}>← Volver</button>
           </div>
         )}
       </div>
@@ -442,6 +442,7 @@ function TipPage({ employee, billAmount = 3200, onBack }) {
 // ─── OVERVIEW (Dashboard) ────────────────────────────────────────────────────
 function Overview({ setView, setTipEmployee }) {
   const total = EMPLOYEES.reduce((s, e) => s + e.totalTips, 0);
+  const maxTotalTips = Math.max(...EMPLOYEES.map(e => e.totalTips));
   const totalTx = EMPLOYEES.reduce((s, e) => s + e.txCount, 0);
   const avgRating = (EMPLOYEES.reduce((s, e) => s + e.rating, 0) / EMPLOYEES.length).toFixed(1);
   const barData = [42, 58, 51, 76, 89, 112, 98];
@@ -451,10 +452,10 @@ function Overview({ setView, setTipEmployee }) {
     <div className="anim-fadeup">
       <div className="stat-grid">
         {[
-          { label: "Всего чаевых", value: fmt(total), sub: "За всё время", delta: "+18%", up: true, icon: "💰" },
-          { label: "Переводов", value: totalTx.toLocaleString("ru-RU"), sub: "Транзакций", delta: "+24%", up: true, icon: "⚡" },
-          { label: "Средний чек", value: "267 ₽", sub: "Средние чаевые", delta: "+5%", up: true, icon: "📊" },
-          { label: "Рейтинг", value: `★ ${avgRating}`, sub: `${EMPLOYEES.length} сотрудников`, icon: "⭐" },
+          { label: "Total propinas", value: fmt(total), sub: "Desde siempre", delta: "+18%", up: true, icon: "💰" },
+          { label: "Transacciones", value: totalTx.toLocaleString("en-US"), sub: "Todas las operaciones", delta: "+24%", up: true, icon: "⚡" },
+          { label: "Propina promedio", value: "$3.65", sub: "Por transacción", delta: "+5%", up: true, icon: "📊" },
+          { label: "Calificación", value: `★ ${avgRating}`, sub: `${EMPLOYEES.length} empleados`, icon: "⭐" },
         ].map((s, i) => (
           <div key={i} className="stat-card">
             <div className="stat-label"><span>{s.icon}</span> {s.label} {s.delta && <span className={`stat-delta ${s.up ? "delta-up" : "delta-down"}`}>{s.up ? "↑" : "↓"} {s.delta}</span>}</div>
@@ -466,19 +467,19 @@ function Overview({ setView, setTipEmployee }) {
 
       <div className="grid-2">
         <div className="card">
-          <div className="card-header"><div className="card-title">Чаевые за неделю</div><span className="badge badge-green">Этот месяц</span></div>
+          <div className="card-header"><div className="card-title">Propinas esta semana</div><span className="badge badge-green">Este mes</span></div>
           <div className="card-body">
             <div className="bar-chart">
               {barData.map((v, i) => (
                 <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
                   <div className="bar" style={{ height: `${(v / maxBar) * 100}%`, background: i === 6 ? "var(--c-accent)" : "var(--c-accent-light)" }} />
-                  <div className="text-xs text-3">{["Пн","Вт","Ср","Чт","Пт","Сб","Вс"][i]}</div>
+                  <div className="text-xs text-3">{["Lu","Ma","Mi","Ju","Vi","Sa","Do"][i]}</div>
                 </div>
               ))}
             </div>
             <div className="divider mt-12 mb-12" />
             <div className="flex justify-between">
-              {[["Ср. день", "38 400 ₽"], ["Лучший", "Суббота"], ["Сейчас", "↑ Активно"]].map(([l, v]) => (
+              {[["Prom. día", "$98.50"], ["Mejor", "Sábado"], ["Ahora", "↑ Activo"]].map(([l, v]) => (
                 <div key={l} className="text-center"><div className="text-xs text-3">{l}</div><div className="text-sm font-600 mt-4">{v}</div></div>
               ))}
             </div>
@@ -486,8 +487,8 @@ function Overview({ setView, setTipEmployee }) {
         </div>
 
         <div className="card">
-          <div className="card-header"><div className="card-title">Топ сотрудники</div>
-            <button className="btn btn-ghost btn-sm" onClick={() => setView("employees")}>Все →</button>
+          <div className="card-header"><div className="card-title">Top personal</div>
+            <button className="btn btn-ghost btn-sm" onClick={() => setView("employees")}>Ver todos →</button>
           </div>
           <div className="card-body" style={{ padding: "8px 20px" }}>
             {[...EMPLOYEES].sort((a,b) => b.totalTips - a.totalTips).map((emp, i) => (
@@ -498,7 +499,7 @@ function Overview({ setView, setTipEmployee }) {
                   <div className="text-sm font-600 truncate">{emp.name}</div>
                   <div className="text-xs text-3">{emp.role}</div>
                 </div>
-                <div style={{ width: 80 }}><div className="progress"><div className="progress-fill progress-blue" style={{ width: `${(emp.totalTips / EMPLOYEES[2].totalTips) * 100}%` }} /></div></div>
+                <div style={{ width: 80 }}><div className="progress"><div className="progress-fill progress-blue" style={{ width: `${(emp.totalTips / maxTotalTips) * 100}%` }} /></div></div>
                 <div className="text-sm font-600 text-accent" style={{ minWidth: 76, textAlign: "right" }}>{fmt(emp.totalTips)}</div>
               </div>
             ))}
@@ -507,10 +508,10 @@ function Overview({ setView, setTipEmployee }) {
       </div>
 
       <div className="card mt-16">
-        <div className="card-header"><div className="card-title">Последние переводы</div></div>
+        <div className="card-header"><div className="card-title">Últimas transacciones</div></div>
         <div className="table-wrap">
           <table className="table">
-            <thead><tr><th>Сотрудник</th><th>Сумма</th><th>% от счёта</th><th>Отзыв</th><th>Дата</th><th>Статус</th></tr></thead>
+            <thead><tr><th>Empleado</th><th>Monto</th><th>% cuenta</th><th>Reseña</th><th>Fecha</th><th>Estado</th></tr></thead>
             <tbody>{TRANSACTIONS.slice(0, 5).map(tx => {
               const emp = EMPLOYEES.find(e => e.id === tx.empId);
               return (
@@ -520,7 +521,7 @@ function Overview({ setView, setTipEmployee }) {
                   <td>{tx.pct ? <span className="badge badge-blue">{tx.pct}%</span> : <span className="text-3">—</span>}</td>
                   <td>{tx.rating ? <Stars rating={tx.rating} /> : <span className="text-3">—</span>}</td>
                   <td className="text-3">{fmtDate(tx.date)}</td>
-                  <td><span className="badge badge-green">✓ Зачислено</span></td>
+                  <td><span className="badge badge-green">✓ Acreditado</span></td>
                 </tr>
               );
             })}</tbody>
@@ -542,18 +543,18 @@ function Employees({ setTipEmployee, setView }) {
     <div className="anim-fadeup">
       <div className="flex items-center justify-between mb-20">
         <div>
-          <div className="text-sm text-3">Управление командой</div>
+          <div className="text-sm text-3">Gestión de personal</div>
         </div>
         <div className="flex gap-8">
-          <button className="btn btn-secondary">⬇ Экспорт QR</button>
-          <button className="btn btn-primary" onClick={() => setModal(true)}>+ Добавить сотрудника</button>
+          <button className="btn btn-secondary">⬇ Exportar QR</button>
+          <button className="btn btn-primary" onClick={() => setModal(true)}>+ Agregar empleado</button>
         </div>
       </div>
 
       <div className="card" style={{ overflow: "hidden" }}>
         <div className="table-wrap">
           <table className="table">
-            <thead><tr><th>Сотрудник</th><th>Роль</th><th>Рейтинг</th><th>Переводов</th><th>Чаевых всего</th><th>Ср. чаевые</th><th>Действия</th></tr></thead>
+            <thead><tr><th>Empleado</th><th>Rol</th><th>Calificación</th><th>Transacciones</th><th>Total propinas</th><th>Prom. propina</th><th>Acciones</th></tr></thead>
             <tbody>{EMPLOYEES.map(emp => (
               <tr key={emp.id}>
                 <td>
@@ -561,7 +562,7 @@ function Employees({ setTipEmployee, setView }) {
                     <Avatar initials={emp.initials} size={40} />
                     <div>
                       <div className="font-600">{emp.name}</div>
-                      <div className="text-xs text-3">{emp.bio || "Нет bio"}</div>
+                      <div className="text-xs text-3">{emp.bio || "Sin descripción"}</div>
                     </div>
                   </div>
                 </td>
@@ -574,9 +575,9 @@ function Employees({ setTipEmployee, setView }) {
                 <td className="text-2">{fmt(emp.avgTip)}</td>
                 <td>
                   <div className="flex gap-6">
-                    <button className="btn btn-secondary btn-sm" onClick={() => openTip(emp)}>Страница ↗</button>
-                    <button className="btn btn-ghost btn-sm btn-icon" title="QR-код" onClick={() => setSelected(emp)}>⊞</button>
-                    <button className="btn btn-ghost btn-sm btn-icon" title="Редактировать">✎</button>
+                    <button className="btn btn-secondary btn-sm" onClick={() => openTip(emp)}>Página ↗</button>
+                    <button className="btn btn-ghost btn-sm btn-icon" title="Código QR" onClick={() => setSelected(emp)}>⊞</button>
+                    <button className="btn btn-ghost btn-sm btn-icon" title="Editar">✎</button>
                   </div>
                 </td>
               </tr>
@@ -586,35 +587,35 @@ function Employees({ setTipEmployee, setView }) {
       </div>
 
       {selected && (
-        <Modal title={`QR-код — ${selected.name}`} onClose={() => setSelected(null)}
-          footer={<><button className="btn btn-secondary" onClick={() => setSelected(null)}>Закрыть</button><button className="btn btn-primary">⬇ Скачать PNG</button></>}>
+        <Modal title={`Código QR — ${selected.name}`} onClose={() => setSelected(null)}
+          footer={<><button className="btn btn-secondary" onClick={() => setSelected(null)}>Cerrar</button><button className="btn btn-primary">⬇ Descargar PNG</button></>}>
           <div className="text-center">
             <div style={{ display: "inline-block", padding: 16, background: "white", borderRadius: 12, border: "1px solid var(--c-border)", boxShadow: "var(--shadow-sm)" }}>
-              <QRSvg value={`chaivoy.ru/tip/${selected.id}`} size={200} />
+              <QRSvg value={`propinero.app/tip/${selected.id}`} size={200} />
             </div>
-            <div className="text-sm text-2 mt-12">chaivoy.ru/tip/{selected.id}</div>
-            <div className="text-xs text-3 mt-4">Разместите на столике, в пречеке или визитке</div>
+            <div className="text-sm text-2 mt-12">propinero.app/tip/{selected.id}</div>
+            <div className="text-xs text-3 mt-4">Colócalo en la mesa, en la pre-cuenta o en una tarjeta</div>
             <div className="flex gap-8 mt-16" style={{ justifyContent: "center" }}>
-              <button className="btn btn-secondary btn-sm">🔗 Копировать ссылку</button>
-              <button className="btn btn-secondary btn-sm">📄 Макет для печати</button>
+              <button className="btn btn-secondary btn-sm">🔗 Copiar enlace</button>
+              <button className="btn btn-secondary btn-sm">📄 Plantilla para impresión</button>
             </div>
           </div>
         </Modal>
       )}
 
       {modal && (
-        <Modal title="Новый сотрудник" onClose={() => setModal(false)}
-          footer={<><button className="btn btn-secondary" onClick={() => setModal(false)}>Отмена</button><button className="btn btn-primary">Добавить</button></>}>
+        <Modal title="Nuevo empleado" onClose={() => setModal(false)}
+          footer={<><button className="btn btn-secondary" onClick={() => setModal(false)}>Cancelar</button><button className="btn btn-primary">Agregar</button></>}>
           <div className="grid-2">
-            <div className="field"><label className="label">Имя</label><input className="input" placeholder="Анна" /></div>
-            <div className="field"><label className="label">Фамилия</label><input className="input" placeholder="Иванова" /></div>
+            <div className="field"><label className="label">Nombre</label><input className="input" placeholder="María" /></div>
+            <div className="field"><label className="label">Apellido</label><input className="input" placeholder="González" /></div>
           </div>
-          <div className="field"><label className="label">Роль / должность</label>
-            <select className="input select"><option>Официант</option><option>Бармен</option><option>Хостес</option><option>Повар</option><option>Другое</option></select>
+          <div className="field"><label className="label">Rol / cargo</label>
+            <select className="input select"><option>Mesonero/a</option><option>Bartender</option><option>Anfitrión/a</option><option>Chef</option><option>Otro</option></select>
           </div>
-          <div className="field"><label className="label">Email</label><input className="input" placeholder="anna@example.com" type="email" /></div>
-          <div className="field"><label className="label">Телефон (для вывода средств)</label><input className="input" placeholder="+7 900 000-00-00" /></div>
-          <div className="field"><label className="label">Bio (отображается гостям)</label><input className="input" placeholder="На что копит чаевые..." /></div>
+          <div className="field"><label className="label">Email</label><input className="input" placeholder="maria@example.com" type="email" /></div>
+          <div className="field"><label className="label">Teléfono (para retiros)</label><input className="input" placeholder="+58 412 000-00-00" /></div>
+          <div className="field"><label className="label">Bio (visible para los clientes)</label><input className="input" placeholder="Cuéntale algo a tus clientes..." /></div>
         </Modal>
       )}
     </div>
@@ -625,10 +626,10 @@ function Employees({ setTipEmployee, setView }) {
 function Analytics() {
   const total = EMPLOYEES.reduce((s,e) => s + e.totalTips, 0);
   const weekData = [
-    { day: "Пн", tips: 32400, tx: 48 }, { day: "Вт", tips: 41200, tx: 61 },
-    { day: "Ср", tips: 28900, tx: 43 }, { day: "Чт", tips: 56100, tx: 83 },
-    { day: "Пт", tips: 71400, tx: 106 }, { day: "Сб", tips: 98200, tx: 145 },
-    { day: "Вс", tips: 84600, tx: 125 },
+    { day: "Lu", tips: 32.40, tx: 48 }, { day: "Ma", tips: 41.20, tx: 61 },
+    { day: "Mi", tips: 28.90, tx: 43 }, { day: "Ju", tips: 56.10, tx: 83 },
+    { day: "Vi", tips: 71.40, tx: 106 }, { day: "Sa", tips: 98.20, tx: 145 },
+    { day: "Do", tips: 84.60, tx: 125 },
   ];
   const maxTips = Math.max(...weekData.map(d => d.tips));
 
@@ -636,12 +637,12 @@ function Analytics() {
     <div className="anim-fadeup">
       <div className="grid-2 mb-16">
         <div className="card">
-          <div className="card-header"><div className="card-title">Чаевые по дням недели</div></div>
+          <div className="card-header"><div className="card-title">Propinas por día de la semana</div></div>
           <div className="card-body">
             <div className="bar-chart" style={{ height: 100 }}>
               {weekData.map((d, i) => (
                 <div key={d.day} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                  <div className="bar" style={{ height: `${(d.tips / maxTips) * 100}%`, background: d.day === "Сб" ? "var(--c-accent)" : d.day === "Вс" ? "#0D9488" : "var(--c-accent-light)" }} />
+                  <div className="bar" style={{ height: `${(d.tips / maxTips) * 100}%`, background: d.day === "Sa" ? "var(--c-accent)" : d.day === "Do" ? "#0D9488" : "var(--c-accent-light)" }} />
                   <div className="text-xs text-3">{d.day}</div>
                 </div>
               ))}
@@ -654,14 +655,14 @@ function Analytics() {
                   <div className="progress-fill progress-blue" style={{ width: `${(d.tips / maxTips) * 100}%` }} />
                 </div>
                 <div className="text-sm font-600" style={{ minWidth: 80, textAlign: "right" }}>{fmt(d.tips)}</div>
-                <div className="text-xs text-3" style={{ minWidth: 30 }}>{d.tx} шт</div>
+                <div className="text-xs text-3" style={{ minWidth: 30 }}>{d.tx} ops</div>
               </div>
             ))}
           </div>
         </div>
 
         <div className="card">
-          <div className="card-header"><div className="card-title">Распределение по сотрудникам</div></div>
+          <div className="card-header"><div className="card-title">Distribución por empleado</div></div>
           <div className="card-body">
             {EMPLOYEES.map((emp, i) => {
               const pct = Math.round(emp.totalTips / total * 100);
@@ -678,7 +679,7 @@ function Analytics() {
             })}
             <div className="divider mt-12 mb-12" />
             <div className="flex justify-between">
-              {[["Лидер", "Мария К.", "var(--c-green)"], ["Ср. рейтинг", "4.85 ★", "var(--c-amber)"], ["Всего", fmt(total), "var(--c-accent)"]].map(([l,v,c]) => (
+              {[["Líder", "Ana R.", "var(--c-green)"], ["Prom. calificación", "4.85 ★", "var(--c-amber)"], ["Total", fmt(total), "var(--c-accent)"]].map(([l,v,c]) => (
                 <div key={l} className="text-center"><div className="text-xs text-3">{l}</div><div className="text-sm font-600 mt-4" style={{ color: c }}>{v}</div></div>
               ))}
             </div>
@@ -687,7 +688,7 @@ function Analytics() {
       </div>
 
       <div className="card">
-        <div className="card-header"><div className="card-title">Отзывы гостей</div><span className="badge badge-green">★ 4.85 средний</span></div>
+        <div className="card-header"><div className="card-title">Reseñas de clientes</div><span className="badge badge-green">★ 4.85 promedio</span></div>
         <div className="card-body">
           {TRANSACTIONS.filter(t => t.comment).map(tx => {
             const emp = EMPLOYEES.find(e => e.id === tx.empId);
@@ -723,19 +724,19 @@ function Settings() {
       <div className="grid-2">
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <div className="card">
-            <div className="card-header"><div className="card-title">Заведение</div></div>
+            <div className="card-header"><div className="card-title">Establecimiento</div></div>
             <div className="card-body">
-              {[["Название", "Resto Milano"], ["Адрес", "Москва, ул. Арбат, 1"], ["Email", "admin@restomilano.ru"], ["Телефон", "+7 499 000-00-00"]].map(([l, v]) => (
+              {[["Nombre", "Resto Milano"], ["Dirección", "Caracas, Las Mercedes, Av. Principal"], ["Email", "admin@restomilano.com"], ["Teléfono", "+58 212 000-0000"]].map(([l, v]) => (
                 <div key={l} className="field"><label className="label">{l}</label><input className="input" defaultValue={v} /></div>
               ))}
-              <button className="btn btn-primary">Сохранить</button>
+              <button className="btn btn-primary">Guardar</button>
             </div>
           </div>
 
           <div className="card">
-            <div className="card-header"><div className="card-title">Уведомления</div></div>
+            <div className="card-header"><div className="card-title">Notificaciones</div></div>
             <div className="card-body" style={{ padding: "8px 20px" }}>
-              {[["emailEach","Email при каждом переводе"],["dailyReport","Ежедневный отчёт"],["withdrawReq","Заявки на вывод"],["reviews","Новые отзывы"]].map(([k,l]) => (
+              {[["emailEach","Email en cada transferencia"],["dailyReport","Reporte diario"],["withdrawReq","Solicitudes de retiro"],["reviews","Nuevas reseñas"]].map(([k,l]) => (
                 <div key={k} className="switch-row">
                   <span className="text-sm">{l}</span>
                   <Switch on={sw[k]} onChange={v => setSw(p => ({ ...p, [k]: v }))} />
@@ -747,9 +748,9 @@ function Settings() {
 
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <div className="card">
-            <div className="card-header"><div className="card-title">Распределение чаевых</div></div>
+            <div className="card-header"><div className="card-title">Distribución de propinas</div></div>
             <div className="card-body">
-              {[["individual","Индивидуально","Каждый получает свои чаевые"],["team","Командные","Все идут в общий котёл"],["split","Сплит","Часть делится с другими"]].map(([v,l,d]) => (
+              {[["individual","Individual","Cada empleado recibe sus propias propinas"],["team","Equipo","Todas van a un fondo común"],["split","División","Parte se comparte con otros"]].map(([v,l,d]) => (
                 <div key={v} style={{ padding: "12px 14px", border: `1.5px solid ${splitMode === v ? "var(--c-accent)" : "var(--c-border)"}`, borderRadius: "var(--r-sm)", marginBottom: 8, cursor: "pointer", background: splitMode === v ? "var(--c-accent-light)" : "white", transition: "all 0.15s" }}
                   onClick={() => setSplitMode(v)}>
                   <div className="flex items-center gap-8">
@@ -765,31 +766,31 @@ function Settings() {
               ))}
               {splitMode === "split" && (
                 <div style={{ padding: "12px 14px", background: "var(--c-bg)", borderRadius: "var(--r-sm)", marginTop: 8 }}>
-                  <div className="text-xs font-600 text-2 mb-8">Правила сплита</div>
-                  {[["Бармен", "10%"], ["Кухня", "5%"]].map(([r, p]) => (
+                  <div className="text-xs font-600 text-2 mb-8">Reglas de división</div>
+                  {[["Bartender", "10%"], ["Cocina", "5%"]].map(([r, p]) => (
                     <div key={r} className="flex items-center gap-8 mb-6">
                       <input className="input" defaultValue={r} style={{ flex: 1 }} />
                       <input className="input" defaultValue={p} style={{ width: 64 }} />
                       <button className="btn btn-ghost btn-icon text-red" style={{ flexShrink: 0 }}>×</button>
                     </div>
                   ))}
-                  <button className="btn btn-ghost btn-sm text-accent">+ Добавить правило</button>
+                  <button className="btn btn-ghost btn-sm text-accent">+ Agregar regla</button>
                 </div>
               )}
             </div>
           </div>
 
           <div className="card">
-            <div className="card-header"><div className="card-title">Дизайн страницы</div></div>
+            <div className="card-header"><div className="card-title">Diseño de página</div></div>
             <div className="card-body">
-              <div className="field"><label className="label">Логотип</label><div style={{ padding: "20px", border: "2px dashed var(--c-border)", borderRadius: "var(--r-sm)", textAlign: "center", cursor: "pointer" }}>
-                <div className="text-xs text-3">Перетащите файл или кликните</div>
-                <div className="text-xs text-3 mt-4">PNG, SVG · до 2 МБ</div>
+              <div className="field"><label className="label">Logotipo</label><div style={{ padding: "20px", border: "2px dashed var(--c-border)", borderRadius: "var(--r-sm)", textAlign: "center", cursor: "pointer" }}>
+                <div className="text-xs text-3">Arrastra el archivo o haz clic</div>
+                <div className="text-xs text-3 mt-4">PNG, SVG · hasta 2 MB</div>
               </div></div>
-              <div className="field"><label className="label">Акцентный цвет</label>
+              <div className="field"><label className="label">Color de acento</label>
                 <div className="flex gap-8">{["#1A56DB","#0D9488","#7C3AED","#D97706","#DC2626"].map(c => <div key={c} style={{ width: 28, height: 28, borderRadius: 6, background: c, cursor: "pointer", border: c === "#1A56DB" ? "2px solid var(--c-text)" : "2px solid transparent" }} />)}</div>
               </div>
-              <button className="btn btn-secondary btn-sm">Предпросмотр страницы</button>
+              <button className="btn btn-secondary btn-sm">Vista previa de página</button>
             </div>
           </div>
         </div>
@@ -807,44 +808,44 @@ function Withdraw() {
         <div>
           <div className="card mb-16" style={{ background: "linear-gradient(135deg, #1A56DB 0%, #0D9488 100%)", border: "none", color: "white" }}>
             <div className="card-body">
-              <div className="text-sm" style={{ opacity: 0.8 }}>Доступно к выводу</div>
+              <div className="text-sm" style={{ opacity: 0.8 }}>Disponible para retirar</div>
               <div style={{ fontFamily: "var(--font-display)", fontSize: 40, fontWeight: 800, letterSpacing: "-0.03em", marginTop: 4 }}>{fmt(emp.totalTips)}</div>
-              <div className="text-sm mt-8" style={{ opacity: 0.8 }}>Сотрудник: {emp.name}</div>
+              <div className="text-sm mt-8" style={{ opacity: 0.8 }}>Empleado: {emp.name}</div>
             </div>
           </div>
           <div className="card">
-            <div className="card-header"><div className="card-title">Заявка на вывод</div></div>
+            <div className="card-header"><div className="card-title">Solicitud de retiro</div></div>
             <div className="card-body">
-              <div className="field"><label className="label">Сотрудник</label>
+              <div className="field"><label className="label">Empleado</label>
                 <select className="input select" onChange={e => setEmp(EMPLOYEES.find(em => em.id === e.target.value))}>
                   {EMPLOYEES.map(e => <option key={e.id} value={e.id}>{e.name} — {fmt(e.totalTips)}</option>)}
                 </select>
               </div>
-              <div className="field"><label className="label">Сумма</label><input className="input" placeholder={`До ${fmt(emp.totalTips)}`} type="number" /></div>
-              <div className="field"><label className="label">Способ</label>
-                <select className="input select"><option>СБП по номеру телефона</option><option>Банковская карта</option><option>Перевод на счёт</option></select>
+              <div className="field"><label className="label">Monto</label><input className="input" placeholder={`Hasta ${fmt(emp.totalTips)}`} type="number" /></div>
+              <div className="field"><label className="label">Método</label>
+                <select className="input select"><option>Pago Móvil</option><option>Zelle</option><option>Zinli</option><option>Binance Pay</option><option>Transferencia bancaria</option></select>
               </div>
-              <div className="field"><label className="label">Реквизиты</label><input className="input" placeholder="+7 900 000-00-00 или номер карты" /></div>
-              <button className="btn btn-primary btn-full btn-lg">Вывести средства</button>
-              <div className="text-xs text-3 text-center mt-8">Зачисление в течение 1 рабочего дня</div>
+              <div className="field"><label className="label">Datos</label><input className="input" placeholder="+58 412 000-00-00 o usuario de Zelle" /></div>
+              <button className="btn btn-primary btn-full btn-lg">Retirar fondos</button>
+              <div className="text-xs text-3 text-center mt-8">Acreditación en 1 día hábil</div>
             </div>
           </div>
         </div>
         <div className="card">
-          <div className="card-header"><div className="card-title">История выводов</div></div>
+          <div className="card-header"><div className="card-title">Historial de retiros</div></div>
           <div className="table-wrap">
             <table className="table">
-              <thead><tr><th>Сотрудник</th><th>Сумма</th><th>Способ</th><th>Дата</th><th>Статус</th></tr></thead>
+              <thead><tr><th>Empleado</th><th>Monto</th><th>Método</th><th>Fecha</th><th>Estado</th></tr></thead>
               <tbody>
-                {[["e3","48000","СБП","2026-02-20","done"],["e1","32000","Карта","2026-02-15","done"],["e2","21000","СБП","2026-02-10","done"],["e4","15000","СБП","2026-02-05","pending"]].map(([id,amt,method,date,status]) => {
+                {[["e3","48.00","Pago Móvil","2026-02-20","done"],["e1","32.00","Zelle","2026-02-15","done"],["e2","21.00","Pago Móvil","2026-02-10","done"],["e4","15.00","Pago Móvil","2026-02-05","pending"]].map(([id,amt,method,date,status]) => {
                   const e = EMPLOYEES.find(em => em.id === id);
                   return (
                     <tr key={date}>
                       <td><div className="flex items-center gap-8"><Avatar initials={e.initials} size={32} /><span className="font-500 text-sm">{e.name}</span></div></td>
-                      <td><span className="font-600 text-green">−{parseInt(amt).toLocaleString("ru-RU")} ₽</span></td>
+                      <td><span className="font-600 text-green">−${amt}</span></td>
                       <td className="text-sm text-2">{method}</td>
-                      <td className="text-xs text-3">{new Date(date).toLocaleDateString("ru-RU")}</td>
-                      <td><span className={`badge ${status === "done" ? "badge-green" : "badge-amber"}`}>{status === "done" ? "✓ Выплачено" : "⏳ В обработке"}</span></td>
+                      <td className="text-xs text-3">{new Date(date).toLocaleDateString("es-VE")}</td>
+                      <td><span className={`badge ${status === "done" ? "badge-green" : "badge-amber"}`}>{status === "done" ? "✓ Pagado" : "⏳ En proceso"}</span></td>
                     </tr>
                   );
                 })}
@@ -863,22 +864,22 @@ export default function App() {
   const [tipEmployee, setTipEmployee] = useState(EMPLOYEES[0]);
 
   const navItems = [
-    { id: "overview", icon: "◈", label: "Обзор" },
-    { id: "employees", icon: "◉", label: "Сотрудники" },
-    { id: "analytics", icon: "↗", label: "Аналитика" },
-    { id: "withdraw", icon: "₽", label: "Выплаты" },
-    { id: "settings", icon: "⊕", label: "Настройки" },
+    { id: "overview", icon: "◈", label: "Resumen" },
+    { id: "employees", icon: "◉", label: "Personal" },
+    { id: "analytics", icon: "↗", label: "Analítica" },
+    { id: "withdraw", icon: "$", label: "Retiros" },
+    { id: "settings", icon: "⊕", label: "Configuración" },
   ];
 
-  const heading = { overview: "Обзор", employees: "Сотрудники", analytics: "Аналитика", withdraw: "Выплаты", settings: "Настройки", tip: "Страница чаевых" };
+  const heading = { overview: "Resumen", employees: "Personal", analytics: "Analítica", withdraw: "Retiros", settings: "Configuración", tip: "Página de propina" };
 
   if (view === "tip") return (
     <>
       <style>{CSS}</style>
       <div style={{ position: "fixed", top: 12, left: 12, zIndex: 999 }}>
-        <button className="btn btn-secondary btn-sm" onClick={() => setView("employees")} style={{ boxShadow: "var(--shadow-md)" }}>← Назад</button>
+        <button className="btn btn-secondary btn-sm" onClick={() => setView("employees")} style={{ boxShadow: "var(--shadow-md)" }}>← Volver</button>
       </div>
-      <TipPage employee={tipEmployee} billAmount={3200} onBack={() => setView("employees")} />
+      <TipPage employee={tipEmployee} billAmount={40} onBack={() => setView("employees")} />
     </>
   );
 
@@ -889,20 +890,20 @@ export default function App() {
         <aside className="sidebar">
           <div className="sidebar-logo">
             <div className="logo-mark">
-              <div className="logo-icon">₽</div>
-              <div><div className="logo-name">ЧайВой</div><div className="logo-sub">Электронные чаевые</div></div>
+              <div className="logo-icon">🪙</div>
+              <div><div className="logo-name">Propinero</div><div className="logo-sub">Propinas digitales</div></div>
             </div>
           </div>
           <nav className="sidebar-nav">
-            <div className="nav-section-label">Кабинет</div>
+            <div className="nav-section-label">Panel</div>
             {navItems.map(item => (
               <button key={item.id} className={`nav-item ${view === item.id ? "active" : ""}`} onClick={() => setView(item.id)}>
                 <span className="nav-icon">{item.icon}</span>{item.label}
               </button>
             ))}
-            <div className="nav-section-label" style={{ marginTop: 8 }}>Демо</div>
+            <div className="nav-section-label" style={{ marginTop: 8 }}>Demo</div>
             <button className="nav-item" onClick={() => { setTipEmployee(EMPLOYEES[0]); setView("tip"); }}>
-              <span className="nav-icon">↗</span>Страница гостя
+              <span className="nav-icon">↗</span>Página de invitado
             </button>
           </nav>
           <div className="sidebar-footer">
@@ -910,7 +911,7 @@ export default function App() {
               <Avatar initials="RM" size={32} color="#1A56DB" />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div className="text-sm font-600 truncate">Resto Milano</div>
-                <div className="text-xs text-3">admin@restomilano.ru</div>
+                <div className="text-xs text-3">admin@restomilano.com</div>
               </div>
             </div>
           </div>
@@ -921,9 +922,9 @@ export default function App() {
             <div className="page-heading">{heading[view]}</div>
             <div className="topbar-actions">
               <button className="btn btn-secondary btn-sm">🔔</button>
-              <button className="btn btn-secondary btn-sm">? Помощь</button>
+              <button className="btn btn-secondary btn-sm">? Ayuda</button>
               <button className="btn btn-primary btn-sm" onClick={() => { setTipEmployee(EMPLOYEES[0]); setView("tip"); }}>
-                Демо страницы гостя ↗
+                Demo página de invitado ↗
               </button>
             </div>
           </header>
