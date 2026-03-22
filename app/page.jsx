@@ -167,7 +167,7 @@ const TRANSLATIONS = {
 const EMPLOYEES = [
   { id: "e1", name: "María González", role: "Mesonera", initials: "MG", rating: 4.9, txCount: 312, totalTips: 340.50, bio: "Hago de tu visita una experiencia inolvidable 🌟", avgTip: 3.20 },
   { id: "e2", name: "Carlos Pérez", role: "Bartender", initials: "CP", rating: 4.7, txCount: 198, totalTips: 182.00, bio: "Te ayudo a elegir el cóctel perfecto", avgTip: 2.80 },
-  { id: "e3", name: "Ana Rodríguez", role: "Mesonera", initials: "AR", rating: 5.0, txCount: 401, totalTips: 480.75, bio: "Cada detalle importa para que disfrutes al máximo ✨", avgTip: 4.10 },
+  { id: "e3", name: "Anna Rodríguez", role: "Mesonera", initials: "AR", rating: 5.0, txCount: 401, totalTips: 480.75, bio: "Cada detalle importa para que disfrutes al máximo ✨", avgTip: 4.10 },
   { id: "e4", name: "Diego Hernández", role: "Anfitrión", initials: "DH", rating: 4.8, txCount: 144, totalTips: 95.20, bio: "", avgTip: 2.50 },
 ];
 
