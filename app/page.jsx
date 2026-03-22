@@ -1,5 +1,167 @@
 "use client";
-import { useState } from "react";
+import { useState, useContext, createContext, useRef, useEffect } from "react";
+
+// ─── I18N ──────────────────────────────────────────────────────────────────────
+const LangCtx = createContext("es");
+
+const TRANSLATIONS = {
+  es: {
+    // Nav
+    panel: "Panel", resumen: "Resumen", personal: "Personal",
+    analitica: "Analítica", retiros: "Retiros", configuracion: "Configuración",
+    demo: "Demo", paginaInvitado: "Página de invitado", volver: "← Volver",
+    ayuda: "Ayuda", demoBtn: "Demo página de invitado ↗",
+    // Overview
+    totalPropinas: "Total propinas", desdeSiempre: "Desde siempre",
+    transacciones: "Transacciones", todasOps: "Todas las operaciones",
+    propinaProm: "Propina promedio", porTransaccion: "Por transacción",
+    calificacion: "Calificación", empleados: "empleados",
+    propinaseSemana: "Propinas esta semana", esteMes: "Este mes",
+    promDia: "Prom. día", mejor: "Mejor", sabado: "Sábado", ahora: "Ahora", activo: "↑ Activo",
+    topPersonal: "Top personal", verTodos: "Ver todos →",
+    ultimasTx: "Últimas transacciones",
+    colEmpleado: "Empleado", colMonto: "Monto", colPct: "% cuenta",
+    colResena: "Reseña", colFecha: "Fecha", colEstado: "Estado",
+    acreditado: "✓ Acreditado",
+    // Employees
+    gestionPersonal: "Gestión de personal", exportarQR: "⬇ Exportar QR",
+    agregarEmpleado: "+ Agregar empleado", colRol: "Rol",
+    colCalif: "Calificación", colTx: "Transacciones",
+    colTotal: "Total propinas", colProm: "Prom. propina", colAcciones: "Acciones",
+    sinDesc: "Sin descripción", pagina: "Página ↗",
+    tituloQR: "Código QR", cerrar: "Cerrar", descargarPNG: "⬇ Descargar PNG",
+    colocarMesa: "Colócalo en la mesa, en la pre-cuenta o en una tarjeta",
+    copiarEnlace: "🔗 Copiar enlace", plantilla: "📄 Plantilla para impresión",
+    nuevoEmpleado: "Nuevo empleado", cancelar: "Cancelar", agregar: "Agregar",
+    nombre: "Nombre", apellido: "Apellido", rolCargo: "Rol / cargo",
+    rolOpciones: ["Mesonero/a", "Bartender", "Anfitrión/a", "Chef", "Otro"],
+    telefonoRetiro: "Teléfono (para retiros)", bioLabel: "Bio (visible para los clientes)",
+    bioPlaceholder: "Cuéntale algo a tus clientes...",
+    editar: "Editar",
+    // Analytics
+    propinasDia: "Propinas por día de la semana",
+    distribucion: "Distribución por empleado",
+    lider: "Líder", promCalif: "Prom. calificación", total: "Total",
+    resenasClientes: "Reseñas de clientes", promedio: "promedio", ops: "ops",
+    days: ["Lu","Ma","Mi","Ju","Vi","Sa","Do"],
+    // Settings
+    establecimiento: "Establecimiento", direccion: "Dirección", telefono: "Teléfono",
+    guardar: "Guardar", notificaciones: "Notificaciones",
+    emailCadaTx: "Email en cada transferencia", reporteDiario: "Reporte diario",
+    solicitudesRetiro: "Solicitudes de retiro", nuevasResenas: "Nuevas reseñas",
+    distPropinas: "Distribución de propinas",
+    individual: "Individual", equipo: "Equipo", division: "División",
+    descIndividual: "Cada empleado recibe sus propias propinas",
+    descEquipo: "Todas van a un fondo común",
+    descDivision: "Parte se comparte con otros",
+    reglasDivision: "Reglas de división", agregarRegla: "+ Agregar regla",
+    disenoPagina: "Diseño de página", logotipo: "Logotipo",
+    arrastraArchivo: "Arrastra el archivo o haz clic",
+    limitePNG: "PNG, SVG · hasta 2 MB", colorAcento: "Color de acento",
+    vistaPreviaBtn: "Vista previa de página",
+    // Withdraw
+    disponible: "Disponible para retirar", solRetiro: "Solicitud de retiro",
+    hasta: "Hasta", metodo: "Método",
+    metodos: ["Pago Móvil","Zelle","Zinli","Binance Pay","Transferencia bancaria"],
+    datos: "Datos", datosPlaceholder: "+58 412 000-00-00 o usuario de Zelle",
+    retirarFondos: "Retirar fondos", acreditacion: "Acreditación en 1 día hábil",
+    historialRetiros: "Historial de retiros",
+    colMetodo: "Método", pagado: "✓ Pagado", enProceso: "⏳ En proceso",
+    // TipPage
+    resenas: "reseñas", totalCuenta: "Total de la cuenta",
+    pctCuenta: "% de la cuenta", montoFijo: "Monto fijo",
+    totalPropina: "Total propina", procesando: "Procesando...",
+    pagar: "Pagar", sinPropina: "Sin propina",
+    pagoSeguro: "🔒 Pago seguro · Pago Móvil, Zelle, Binance",
+    enviado: "enviado!", recibiraPropina: "recibirá tu propina",
+    comoServicio: "¿Cómo fue el servicio?",
+    comentarioPlaceholder: "Comentario (opcional)...",
+    dejaResena: "Deja una reseña y ayuda al restaurante:",
+    seleccionado: "Seleccionado ✓",
+    enviarResena: "Enviar reseña", enviar: "Enviar", omitir: "Omitir",
+    gracias: "¡Gracias!",
+    propinasEnviadas: "Tu propina y reseña fueron enviadas.",
+    nochesMejor: "Hiciste la noche mejor ✨",
+  },
+  en: {
+    // Nav
+    panel: "Panel", resumen: "Overview", personal: "Staff",
+    analitica: "Analytics", retiros: "Withdrawals", configuracion: "Settings",
+    demo: "Demo", paginaInvitado: "Guest page", volver: "← Back",
+    ayuda: "Help", demoBtn: "Guest page demo ↗",
+    // Overview
+    totalPropinas: "Total tips", desdeSiempre: "All time",
+    transacciones: "Transactions", todasOps: "All operations",
+    propinaProm: "Average tip", porTransaccion: "Per transaction",
+    calificacion: "Rating", empleados: "employees",
+    propinaseSemana: "Tips this week", esteMes: "This month",
+    promDia: "Avg. day", mejor: "Best", sabado: "Saturday", ahora: "Now", activo: "↑ Active",
+    topPersonal: "Top staff", verTodos: "See all →",
+    ultimasTx: "Latest transactions",
+    colEmpleado: "Employee", colMonto: "Amount", colPct: "% bill",
+    colResena: "Review", colFecha: "Date", colEstado: "Status",
+    acreditado: "✓ Credited",
+    // Employees
+    gestionPersonal: "Team management", exportarQR: "⬇ Export QR",
+    agregarEmpleado: "+ Add employee", colRol: "Role",
+    colCalif: "Rating", colTx: "Transactions",
+    colTotal: "Total tips", colProm: "Avg. tip", colAcciones: "Actions",
+    sinDesc: "No description", pagina: "Page ↗",
+    tituloQR: "QR Code", cerrar: "Close", descargarPNG: "⬇ Download PNG",
+    colocarMesa: "Place on the table, in the pre-check or on a business card",
+    copiarEnlace: "🔗 Copy link", plantilla: "📄 Print template",
+    nuevoEmpleado: "New employee", cancelar: "Cancel", agregar: "Add",
+    nombre: "First name", apellido: "Last name", rolCargo: "Role / position",
+    rolOpciones: ["Waiter/ess", "Bartender", "Host/ess", "Chef", "Other"],
+    telefonoRetiro: "Phone (for withdrawals)", bioLabel: "Bio (visible to guests)",
+    bioPlaceholder: "Tell guests something about you...",
+    editar: "Edit",
+    // Analytics
+    propinasDia: "Tips by day of the week",
+    distribucion: "Distribution by employee",
+    lider: "Leader", promCalif: "Avg. rating", total: "Total",
+    resenasClientes: "Customer reviews", promedio: "average", ops: "ops",
+    days: ["Mo","Tu","We","Th","Fr","Sa","Su"],
+    // Settings
+    establecimiento: "Establishment", direccion: "Address", telefono: "Phone",
+    guardar: "Save", notificaciones: "Notifications",
+    emailCadaTx: "Email on each transfer", reporteDiario: "Daily report",
+    solicitudesRetiro: "Withdrawal requests", nuevasResenas: "New reviews",
+    distPropinas: "Tip distribution",
+    individual: "Individual", equipo: "Team", division: "Split",
+    descIndividual: "Each employee receives their own tips",
+    descEquipo: "All go to a common pool",
+    descDivision: "Part is shared with others",
+    reglasDivision: "Split rules", agregarRegla: "+ Add rule",
+    disenoPagina: "Page design", logotipo: "Logo",
+    arrastraArchivo: "Drag file or click",
+    limitePNG: "PNG, SVG · up to 2 MB", colorAcento: "Accent color",
+    vistaPreviaBtn: "Page preview",
+    // Withdraw
+    disponible: "Available to withdraw", solRetiro: "Withdrawal request",
+    hasta: "Up to", metodo: "Method",
+    metodos: ["Pago Móvil","Zelle","Zinli","Binance Pay","Bank transfer"],
+    datos: "Details", datosPlaceholder: "+58 412 000-00-00 or Zelle user",
+    retirarFondos: "Withdraw funds", acreditacion: "Credited within 1 business day",
+    historialRetiros: "Withdrawal history",
+    colMetodo: "Method", pagado: "✓ Paid", enProceso: "⏳ Processing",
+    // TipPage
+    resenas: "reviews", totalCuenta: "Total bill",
+    pctCuenta: "% of bill", montoFijo: "Fixed amount",
+    totalPropina: "Total tip", procesando: "Processing...",
+    pagar: "Pay", sinPropina: "No tip",
+    pagoSeguro: "🔒 Secure payment · Pago Móvil, Zelle, Binance",
+    enviado: "sent!", recibiraPropina: "will receive your tip",
+    comoServicio: "How was the service?",
+    comentarioPlaceholder: "Comment (optional)...",
+    dejaResena: "Leave a review and help the restaurant:",
+    seleccionado: "Selected ✓",
+    enviarResena: "Send review", enviar: "Send", omitir: "Skip",
+    gracias: "Thank you!",
+    propinasEnviadas: "Your tip and review were sent.",
+    nochesMejor: "You made the evening better ✨",
+  },
+};
 
 // ─── MOCK DATA ────────────────────────────────────────────────────────────────
 const EMPLOYEES = [
@@ -305,6 +467,8 @@ function Modal({ title, onClose, children, footer }) {
 
 // ─── TIP PAGE (гостевая страница) ────────────────────────────────────────────
 function TipPage({ employee, billAmount = 3200, onBack }) {
+  const lang = useContext(LangCtx);
+  const T = TRANSLATIONS[lang];
   const [step, setStep] = useState("tips"); // tips | review | success
   const [mode, setMode] = useState("pct"); // pct | fixed
   const [pct, setPct] = useState(10);
@@ -340,19 +504,19 @@ function TipPage({ employee, billAmount = 3200, onBack }) {
             <div className="flex items-center gap-8 mt-12" style={{ justifyContent: "center" }}>
               <Stars rating={employee.rating} />
               <span style={{ fontSize: 13, opacity: 0.9, fontWeight: 600 }}>{employee.rating}</span>
-              <span style={{ fontSize: 12, opacity: 0.6 }}>({employee.txCount} reseñas)</span>
+              <span style={{ fontSize: 12, opacity: 0.6 }}>({employee.txCount} {T.resenas})</span>
             </div>
           </div>
 
           <div className="tip-body">
             <div style={{ background: "#F8F9FB", borderRadius: 10, padding: "10px 14px", marginBottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span className="text-sm text-2">Total de la cuenta</span>
+              <span className="text-sm text-2">{T.totalCuenta}</span>
               <span className="font-600">{fmt(billAmount)}</span>
             </div>
 
             <div className="tab-row">
-              <button className={`tab-btn ${mode === "pct" ? "active" : ""}`} onClick={() => setMode("pct")}>% de la cuenta</button>
-              <button className={`tab-btn ${mode === "fixed" ? "active" : ""}`} onClick={() => setMode("fixed")}>Monto fijo</button>
+              <button className={`tab-btn ${mode === "pct" ? "active" : ""}`} onClick={() => setMode("pct")}>{T.pctCuenta}</button>
+              <button className={`tab-btn ${mode === "fixed" ? "active" : ""}`} onClick={() => setMode("fixed")}>{T.montoFijo}</button>
             </div>
 
             {mode === "pct" ? (
@@ -370,24 +534,24 @@ function TipPage({ employee, billAmount = 3200, onBack }) {
                     </button>
                   ))}
                 </div>
-                <input className="input" placeholder="Otro monto, $" type="number" value={customFixed} onChange={e => setCustomFixed(e.target.value)} />
+                <input className="input" placeholder={lang === "es" ? "Otro monto, $" : "Other amount, $"} type="number" value={customFixed} onChange={e => setCustomFixed(e.target.value)} />
               </>
             )}
 
             {calcAmount > 0 && (
               <div style={{ marginTop: 16, padding: "14px 16px", background: "#EBF0FF", borderRadius: 10, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span className="text-sm font-600 text-accent">Total propina</span>
+                <span className="text-sm font-600 text-accent">{T.totalPropina}</span>
                 <span style={{ fontFamily: "var(--font-display)", fontSize: 22, fontWeight: 700, color: "var(--c-accent)" }}>{fmt(calcAmount)}</span>
               </div>
             )}
 
             <button className="btn btn-primary btn-full btn-lg mt-16" onClick={pay} disabled={!calcAmount || loading}>
-              {loading ? <span style={{ display: "flex", alignItems: "center", gap: 8 }}><span style={{ width: 16, height: 16, border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "white", borderRadius: "50%", animation: "spin 0.6s linear infinite", display: "inline-block" }} />Procesando...</span> : `Pagar ${calcAmount ? fmt(calcAmount) : ""}`}
+              {loading ? <span style={{ display: "flex", alignItems: "center", gap: 8 }}><span style={{ width: 16, height: 16, border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "white", borderRadius: "50%", animation: "spin 0.6s linear infinite", display: "inline-block" }} />{T.procesando}</span> : `${T.pagar} ${calcAmount ? fmt(calcAmount) : ""}`}
             </button>
-            <button className="btn btn-ghost btn-full mt-6" style={{ color: "var(--c-text-3)", fontSize: 12 }}>Sin propina</button>
+            <button className="btn btn-ghost btn-full mt-6" style={{ color: "var(--c-text-3)", fontSize: 12 }}>{T.sinPropina}</button>
           </div>
           <div className="tip-footer">
-            <div className="text-xs text-3">🔒 Pago seguro · Pago Móvil, Zelle, Binance</div>
+            <div className="text-xs text-3">{T.pagoSeguro}</div>
             <div className="text-xs text-3 mt-4">Powered by <strong style={{ color: "var(--c-accent)" }}>Propinero</strong></div>
           </div>
         </>}
@@ -395,42 +559,42 @@ function TipPage({ employee, billAmount = 3200, onBack }) {
         {step === "review" && (
           <div className="tip-body anim-fadeup" style={{ padding: "32px 28px" }}>
             <div className="success-check">🎉</div>
-            <div className="font-display font-700 text-xl text-center">{fmt(calcAmount)} enviado!</div>
-            <div className="text-center text-sm text-2 mt-6">{employee.name} recibirá tu propina</div>
+            <div className="font-display font-700 text-xl text-center">{fmt(calcAmount)} {T.enviado}</div>
+            <div className="text-center text-sm text-2 mt-6">{employee.name} {T.recibiraPropina}</div>
             <div className="divider" style={{ margin: "20px 0" }} />
-            <div className="text-sm font-600 mb-12 text-center">¿Cómo fue el servicio?</div>
+            <div className="text-sm font-600 mb-12 text-center">{T.comoServicio}</div>
             <div className="flex gap-8" style={{ justifyContent: "center", marginBottom: 16 }}>
               {[1,2,3,4,5].map(s => (
                 <span key={s} style={{ fontSize: 32, cursor: "pointer", filter: s <= (hoverRating || rating) ? "none" : "grayscale(1)", transition: "transform 0.1s", transform: s <= (hoverRating || rating) ? "scale(1.2)" : "scale(1)" }}
                   onClick={() => setRating(s)} onMouseEnter={() => setHoverRating(s)} onMouseLeave={() => setHoverRating(0)}>⭐</span>
               ))}
             </div>
-            <textarea className="input textarea" placeholder="Comentario (opcional)..." value={comment} onChange={e => setComment(e.target.value)} style={{ marginBottom: 12 }} />
+            <textarea className="input textarea" placeholder={T.comentarioPlaceholder} value={comment} onChange={e => setComment(e.target.value)} style={{ marginBottom: 12 }} />
             {rating >= 4 && (
               <>
-                <div className="text-xs text-3 text-center mb-8">Deja una reseña y ayuda al restaurante:</div>
+                <div className="text-xs text-3 text-center mb-8">{T.dejaResena}</div>
                 <div className="review-platforms">
                   {[{ id: "google", label: "Google Maps", emoji: "🗺", color: "#4285F4" }, { id: "tripadvisor", label: "TripAdvisor", emoji: "🦉", color: "#00AA6C" }].map(p => (
                     <button key={p.id} className={`platform-btn ${platform === p.id ? "active" : ""}`} onClick={() => setPlatform(p.id)}>
                       <span style={{ fontSize: 18 }}>{p.emoji}</span>
                       <span>{p.label}</span>
-                      {platform === p.id && <span className="badge badge-blue" style={{ marginLeft: "auto" }}>Seleccionado ✓</span>}
+                      {platform === p.id && <span className="badge badge-blue" style={{ marginLeft: "auto" }}>{T.seleccionado}</span>}
                     </button>
                   ))}
                 </div>
               </>
             )}
-            <button className="btn btn-primary btn-full btn-lg mt-16" onClick={finish}>Enviar{rating ? " reseña" : ""}</button>
-            <button className="btn btn-ghost btn-full mt-6" style={{ fontSize: 12 }} onClick={finish}>Omitir</button>
+            <button className="btn btn-primary btn-full btn-lg mt-16" onClick={finish}>{rating ? T.enviarResena : T.enviar}</button>
+            <button className="btn btn-ghost btn-full mt-6" style={{ fontSize: 12 }} onClick={finish}>{T.omitir}</button>
           </div>
         )}
 
         {step === "success" && (
           <div className="tip-body anim-fadeup" style={{ padding: "48px 28px", textAlign: "center" }}>
             <div style={{ width: 72, height: 72, background: "linear-gradient(135deg,#1A56DB,#0D9488)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, margin: "0 auto 20px" }}>✓</div>
-            <div className="font-display font-700 text-2xl" style={{ color: "var(--c-text)" }}>¡Gracias!</div>
-            <div className="text-sm text-2 mt-8" style={{ lineHeight: 1.7 }}>Tu propina y reseña fueron enviadas.<br />Hiciste la noche mejor ✨</div>
-            <button className="btn btn-secondary mt-24" onClick={onBack}>← Volver</button>
+            <div className="font-display font-700 text-2xl" style={{ color: "var(--c-text)" }}>{T.gracias}</div>
+            <div className="text-sm text-2 mt-8" style={{ lineHeight: 1.7 }}>{T.propinasEnviadas}<br />{T.nochesMejor}</div>
+            <button className="btn btn-secondary mt-24" onClick={onBack}>{T.volver}</button>
           </div>
         )}
       </div>
@@ -440,7 +604,9 @@ function TipPage({ employee, billAmount = 3200, onBack }) {
 }
 
 // ─── OVERVIEW (Dashboard) ────────────────────────────────────────────────────
-function Overview({ setView, setTipEmployee }) {
+function Overview({ setView }) {
+  const lang = useContext(LangCtx);
+  const T = TRANSLATIONS[lang];
   const total = EMPLOYEES.reduce((s, e) => s + e.totalTips, 0);
   const maxTotalTips = Math.max(...EMPLOYEES.map(e => e.totalTips));
   const totalTx = EMPLOYEES.reduce((s, e) => s + e.txCount, 0);
@@ -452,10 +618,10 @@ function Overview({ setView, setTipEmployee }) {
     <div className="anim-fadeup">
       <div className="stat-grid">
         {[
-          { label: "Total propinas", value: fmt(total), sub: "Desde siempre", delta: "+18%", up: true, icon: "💰" },
-          { label: "Transacciones", value: totalTx.toLocaleString("en-US"), sub: "Todas las operaciones", delta: "+24%", up: true, icon: "⚡" },
-          { label: "Propina promedio", value: "$3.65", sub: "Por transacción", delta: "+5%", up: true, icon: "📊" },
-          { label: "Calificación", value: `★ ${avgRating}`, sub: `${EMPLOYEES.length} empleados`, icon: "⭐" },
+          { label: T.totalPropinas, value: fmt(total), sub: T.desdeSiempre, delta: "+18%", up: true, icon: "💰" },
+          { label: T.transacciones, value: totalTx.toLocaleString("en-US"), sub: T.todasOps, delta: "+24%", up: true, icon: "⚡" },
+          { label: T.propinaProm, value: "$3.65", sub: T.porTransaccion, delta: "+5%", up: true, icon: "📊" },
+          { label: T.calificacion, value: `★ ${avgRating}`, sub: `${EMPLOYEES.length} ${T.empleados}`, icon: "⭐" },
         ].map((s, i) => (
           <div key={i} className="stat-card">
             <div className="stat-label"><span>{s.icon}</span> {s.label} {s.delta && <span className={`stat-delta ${s.up ? "delta-up" : "delta-down"}`}>{s.up ? "↑" : "↓"} {s.delta}</span>}</div>
@@ -467,19 +633,19 @@ function Overview({ setView, setTipEmployee }) {
 
       <div className="grid-2">
         <div className="card">
-          <div className="card-header"><div className="card-title">Propinas esta semana</div><span className="badge badge-green">Este mes</span></div>
+          <div className="card-header"><div className="card-title">{T.propinaseSemana}</div><span className="badge badge-green">{T.esteMes}</span></div>
           <div className="card-body">
             <div className="bar-chart">
               {barData.map((v, i) => (
                 <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
                   <div className="bar" style={{ height: `${(v / maxBar) * 100}%`, background: i === 6 ? "var(--c-accent)" : "var(--c-accent-light)" }} />
-                  <div className="text-xs text-3">{["Lu","Ma","Mi","Ju","Vi","Sa","Do"][i]}</div>
+                  <div className="text-xs text-3">{T.days[i]}</div>
                 </div>
               ))}
             </div>
             <div className="divider mt-12 mb-12" />
             <div className="flex justify-between">
-              {[["Prom. día", "$98.50"], ["Mejor", "Sábado"], ["Ahora", "↑ Activo"]].map(([l, v]) => (
+              {[[T.promDia, "$98.50"], [T.mejor, T.sabado], [T.ahora, T.activo]].map(([l, v]) => (
                 <div key={l} className="text-center"><div className="text-xs text-3">{l}</div><div className="text-sm font-600 mt-4">{v}</div></div>
               ))}
             </div>
@@ -487,8 +653,8 @@ function Overview({ setView, setTipEmployee }) {
         </div>
 
         <div className="card">
-          <div className="card-header"><div className="card-title">Top personal</div>
-            <button className="btn btn-ghost btn-sm" onClick={() => setView("employees")}>Ver todos →</button>
+          <div className="card-header"><div className="card-title">{T.topPersonal}</div>
+            <button className="btn btn-ghost btn-sm" onClick={() => setView("employees")}>{T.verTodos}</button>
           </div>
           <div className="card-body" style={{ padding: "8px 20px" }}>
             {[...EMPLOYEES].sort((a,b) => b.totalTips - a.totalTips).map((emp, i) => (
@@ -508,10 +674,10 @@ function Overview({ setView, setTipEmployee }) {
       </div>
 
       <div className="card mt-16">
-        <div className="card-header"><div className="card-title">Últimas transacciones</div></div>
+        <div className="card-header"><div className="card-title">{T.ultimasTx}</div></div>
         <div className="table-wrap">
           <table className="table">
-            <thead><tr><th>Empleado</th><th>Monto</th><th>% cuenta</th><th>Reseña</th><th>Fecha</th><th>Estado</th></tr></thead>
+            <thead><tr><th>{T.colEmpleado}</th><th>{T.colMonto}</th><th>{T.colPct}</th><th>{T.colResena}</th><th>{T.colFecha}</th><th>{T.colEstado}</th></tr></thead>
             <tbody>{TRANSACTIONS.slice(0, 5).map(tx => {
               const emp = EMPLOYEES.find(e => e.id === tx.empId);
               return (
@@ -521,7 +687,7 @@ function Overview({ setView, setTipEmployee }) {
                   <td>{tx.pct ? <span className="badge badge-blue">{tx.pct}%</span> : <span className="text-3">—</span>}</td>
                   <td>{tx.rating ? <Stars rating={tx.rating} /> : <span className="text-3">—</span>}</td>
                   <td className="text-3">{fmtDate(tx.date)}</td>
-                  <td><span className="badge badge-green">✓ Acreditado</span></td>
+                  <td><span className="badge badge-green">{T.acreditado}</span></td>
                 </tr>
               );
             })}</tbody>
@@ -534,6 +700,8 @@ function Overview({ setView, setTipEmployee }) {
 
 // ─── EMPLOYEES ────────────────────────────────────────────────────────────────
 function Employees({ setTipEmployee, setView }) {
+  const lang = useContext(LangCtx);
+  const T = TRANSLATIONS[lang];
   const [modal, setModal] = useState(false);
   const [selected, setSelected] = useState(null);
 
@@ -543,18 +711,18 @@ function Employees({ setTipEmployee, setView }) {
     <div className="anim-fadeup">
       <div className="flex items-center justify-between mb-20">
         <div>
-          <div className="text-sm text-3">Gestión de personal</div>
+          <div className="text-sm text-3">{T.gestionPersonal}</div>
         </div>
         <div className="flex gap-8">
-          <button className="btn btn-secondary">⬇ Exportar QR</button>
-          <button className="btn btn-primary" onClick={() => setModal(true)}>+ Agregar empleado</button>
+          <button className="btn btn-secondary">{T.exportarQR}</button>
+          <button className="btn btn-primary" onClick={() => setModal(true)}>{T.agregarEmpleado}</button>
         </div>
       </div>
 
       <div className="card" style={{ overflow: "hidden" }}>
         <div className="table-wrap">
           <table className="table">
-            <thead><tr><th>Empleado</th><th>Rol</th><th>Calificación</th><th>Transacciones</th><th>Total propinas</th><th>Prom. propina</th><th>Acciones</th></tr></thead>
+            <thead><tr><th>{T.colEmpleado}</th><th>{T.colRol}</th><th>{T.colCalif}</th><th>{T.colTx}</th><th>{T.colTotal}</th><th>{T.colProm}</th><th>{T.colAcciones}</th></tr></thead>
             <tbody>{EMPLOYEES.map(emp => (
               <tr key={emp.id}>
                 <td>
@@ -562,7 +730,7 @@ function Employees({ setTipEmployee, setView }) {
                     <Avatar initials={emp.initials} size={40} />
                     <div>
                       <div className="font-600">{emp.name}</div>
-                      <div className="text-xs text-3">{emp.bio || "Sin descripción"}</div>
+                      <div className="text-xs text-3">{emp.bio || T.sinDesc}</div>
                     </div>
                   </div>
                 </td>
@@ -575,9 +743,9 @@ function Employees({ setTipEmployee, setView }) {
                 <td className="text-2">{fmt(emp.avgTip)}</td>
                 <td>
                   <div className="flex gap-6">
-                    <button className="btn btn-secondary btn-sm" onClick={() => openTip(emp)}>Página ↗</button>
-                    <button className="btn btn-ghost btn-sm btn-icon" title="Código QR" onClick={() => setSelected(emp)}>⊞</button>
-                    <button className="btn btn-ghost btn-sm btn-icon" title="Editar">✎</button>
+                    <button className="btn btn-secondary btn-sm" onClick={() => openTip(emp)}>{T.pagina}</button>
+                    <button className="btn btn-ghost btn-sm btn-icon" title={T.tituloQR} onClick={() => setSelected(emp)}>⊞</button>
+                    <button className="btn btn-ghost btn-sm btn-icon" title={T.editar}>✎</button>
                   </div>
                 </td>
               </tr>
@@ -587,35 +755,35 @@ function Employees({ setTipEmployee, setView }) {
       </div>
 
       {selected && (
-        <Modal title={`Código QR — ${selected.name}`} onClose={() => setSelected(null)}
-          footer={<><button className="btn btn-secondary" onClick={() => setSelected(null)}>Cerrar</button><button className="btn btn-primary">⬇ Descargar PNG</button></>}>
+        <Modal title={`${T.tituloQR} — ${selected.name}`} onClose={() => setSelected(null)}
+          footer={<><button className="btn btn-secondary" onClick={() => setSelected(null)}>{T.cerrar}</button><button className="btn btn-primary">{T.descargarPNG}</button></>}>
           <div className="text-center">
             <div style={{ display: "inline-block", padding: 16, background: "white", borderRadius: 12, border: "1px solid var(--c-border)", boxShadow: "var(--shadow-sm)" }}>
               <QRSvg value={`propinero.app/tip/${selected.id}`} size={200} />
             </div>
             <div className="text-sm text-2 mt-12">propinero.app/tip/{selected.id}</div>
-            <div className="text-xs text-3 mt-4">Colócalo en la mesa, en la pre-cuenta o en una tarjeta</div>
+            <div className="text-xs text-3 mt-4">{T.colocarMesa}</div>
             <div className="flex gap-8 mt-16" style={{ justifyContent: "center" }}>
-              <button className="btn btn-secondary btn-sm">🔗 Copiar enlace</button>
-              <button className="btn btn-secondary btn-sm">📄 Plantilla para impresión</button>
+              <button className="btn btn-secondary btn-sm">{T.copiarEnlace}</button>
+              <button className="btn btn-secondary btn-sm">{T.plantilla}</button>
             </div>
           </div>
         </Modal>
       )}
 
       {modal && (
-        <Modal title="Nuevo empleado" onClose={() => setModal(false)}
-          footer={<><button className="btn btn-secondary" onClick={() => setModal(false)}>Cancelar</button><button className="btn btn-primary">Agregar</button></>}>
+        <Modal title={T.nuevoEmpleado} onClose={() => setModal(false)}
+          footer={<><button className="btn btn-secondary" onClick={() => setModal(false)}>{T.cancelar}</button><button className="btn btn-primary">{T.agregar}</button></>}>
           <div className="grid-2">
-            <div className="field"><label className="label">Nombre</label><input className="input" placeholder="María" /></div>
-            <div className="field"><label className="label">Apellido</label><input className="input" placeholder="González" /></div>
+            <div className="field"><label className="label">{T.nombre}</label><input className="input" placeholder="María" /></div>
+            <div className="field"><label className="label">{T.apellido}</label><input className="input" placeholder="González" /></div>
           </div>
-          <div className="field"><label className="label">Rol / cargo</label>
-            <select className="input select"><option>Mesonero/a</option><option>Bartender</option><option>Anfitrión/a</option><option>Chef</option><option>Otro</option></select>
+          <div className="field"><label className="label">{T.rolCargo}</label>
+            <select className="input select">{T.rolOpciones.map(o => <option key={o}>{o}</option>)}</select>
           </div>
           <div className="field"><label className="label">Email</label><input className="input" placeholder="maria@example.com" type="email" /></div>
-          <div className="field"><label className="label">Teléfono (para retiros)</label><input className="input" placeholder="+58 412 000-00-00" /></div>
-          <div className="field"><label className="label">Bio (visible para los clientes)</label><input className="input" placeholder="Cuéntale algo a tus clientes..." /></div>
+          <div className="field"><label className="label">{T.telefonoRetiro}</label><input className="input" placeholder="+58 412 000-00-00" /></div>
+          <div className="field"><label className="label">{T.bioLabel}</label><input className="input" placeholder={T.bioPlaceholder} /></div>
         </Modal>
       )}
     </div>
@@ -624,25 +792,24 @@ function Employees({ setTipEmployee, setView }) {
 
 // ─── ANALYTICS ───────────────────────────────────────────────────────────────
 function Analytics() {
+  const lang = useContext(LangCtx);
+  const T = TRANSLATIONS[lang];
   const total = EMPLOYEES.reduce((s,e) => s + e.totalTips, 0);
-  const weekData = [
-    { day: "Lu", tips: 32.40, tx: 48 }, { day: "Ma", tips: 41.20, tx: 61 },
-    { day: "Mi", tips: 28.90, tx: 43 }, { day: "Ju", tips: 56.10, tx: 83 },
-    { day: "Vi", tips: 71.40, tx: 106 }, { day: "Sa", tips: 98.20, tx: 145 },
-    { day: "Do", tips: 84.60, tx: 125 },
-  ];
+  const weekTips = [32.40, 41.20, 28.90, 56.10, 71.40, 98.20, 84.60];
+  const weekTx =   [48,    61,    43,    83,    106,   145,   125];
+  const weekData = T.days.map((day, i) => ({ day, tips: weekTips[i], tx: weekTx[i] }));
   const maxTips = Math.max(...weekData.map(d => d.tips));
 
   return (
     <div className="anim-fadeup">
       <div className="grid-2 mb-16">
         <div className="card">
-          <div className="card-header"><div className="card-title">Propinas por día de la semana</div></div>
+          <div className="card-header"><div className="card-title">{T.propinasDia}</div></div>
           <div className="card-body">
             <div className="bar-chart" style={{ height: 100 }}>
               {weekData.map((d, i) => (
                 <div key={d.day} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                  <div className="bar" style={{ height: `${(d.tips / maxTips) * 100}%`, background: d.day === "Sa" ? "var(--c-accent)" : d.day === "Do" ? "#0D9488" : "var(--c-accent-light)" }} />
+                  <div className="bar" style={{ height: `${(d.tips / maxTips) * 100}%`, background: i === 5 ? "var(--c-accent)" : i === 6 ? "#0D9488" : "var(--c-accent-light)" }} />
                   <div className="text-xs text-3">{d.day}</div>
                 </div>
               ))}
@@ -655,14 +822,14 @@ function Analytics() {
                   <div className="progress-fill progress-blue" style={{ width: `${(d.tips / maxTips) * 100}%` }} />
                 </div>
                 <div className="text-sm font-600" style={{ minWidth: 80, textAlign: "right" }}>{fmt(d.tips)}</div>
-                <div className="text-xs text-3" style={{ minWidth: 30 }}>{d.tx} ops</div>
+                <div className="text-xs text-3" style={{ minWidth: 30 }}>{d.tx} {T.ops}</div>
               </div>
             ))}
           </div>
         </div>
 
         <div className="card">
-          <div className="card-header"><div className="card-title">Distribución por empleado</div></div>
+          <div className="card-header"><div className="card-title">{T.distribucion}</div></div>
           <div className="card-body">
             {EMPLOYEES.map((emp, i) => {
               const pct = Math.round(emp.totalTips / total * 100);
@@ -679,7 +846,7 @@ function Analytics() {
             })}
             <div className="divider mt-12 mb-12" />
             <div className="flex justify-between">
-              {[["Líder", "Ana R.", "var(--c-green)"], ["Prom. calificación", "4.85 ★", "var(--c-amber)"], ["Total", fmt(total), "var(--c-accent)"]].map(([l,v,c]) => (
+              {[[T.lider, "Ana R.", "var(--c-green)"], [T.promCalif, "4.85 ★", "var(--c-amber)"], [T.total, fmt(total), "var(--c-accent)"]].map(([l,v,c]) => (
                 <div key={l} className="text-center"><div className="text-xs text-3">{l}</div><div className="text-sm font-600 mt-4" style={{ color: c }}>{v}</div></div>
               ))}
             </div>
@@ -688,7 +855,7 @@ function Analytics() {
       </div>
 
       <div className="card">
-        <div className="card-header"><div className="card-title">Reseñas de clientes</div><span className="badge badge-green">★ 4.85 promedio</span></div>
+        <div className="card-header"><div className="card-title">{T.resenasClientes}</div><span className="badge badge-green">★ 4.85 {T.promedio}</span></div>
         <div className="card-body">
           {TRANSACTIONS.filter(t => t.comment).map(tx => {
             const emp = EMPLOYEES.find(e => e.id === tx.empId);
@@ -717,6 +884,8 @@ function Analytics() {
 
 // ─── SETTINGS ────────────────────────────────────────────────────────────────
 function Settings() {
+  const lang = useContext(LangCtx);
+  const T = TRANSLATIONS[lang];
   const [sw, setSw] = useState({ emailEach: true, dailyReport: true, withdrawReq: false, reviews: true });
   const [splitMode, setSplitMode] = useState("individual");
   return (
@@ -724,19 +893,19 @@ function Settings() {
       <div className="grid-2">
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <div className="card">
-            <div className="card-header"><div className="card-title">Establecimiento</div></div>
+            <div className="card-header"><div className="card-title">{T.establecimiento}</div></div>
             <div className="card-body">
-              {[["Nombre", "Resto Milano"], ["Dirección", "Caracas, Las Mercedes, Av. Principal"], ["Email", "admin@restomilano.com"], ["Teléfono", "+58 212 000-0000"]].map(([l, v]) => (
+              {[[T.nombre, "Resto Milano"], [T.direccion, "Caracas, Las Mercedes, Av. Principal"], ["Email", "admin@restomilano.com"], [T.telefono, "+58 212 000-0000"]].map(([l, v]) => (
                 <div key={l} className="field"><label className="label">{l}</label><input className="input" defaultValue={v} /></div>
               ))}
-              <button className="btn btn-primary">Guardar</button>
+              <button className="btn btn-primary">{T.guardar}</button>
             </div>
           </div>
 
           <div className="card">
-            <div className="card-header"><div className="card-title">Notificaciones</div></div>
+            <div className="card-header"><div className="card-title">{T.notificaciones}</div></div>
             <div className="card-body" style={{ padding: "8px 20px" }}>
-              {[["emailEach","Email en cada transferencia"],["dailyReport","Reporte diario"],["withdrawReq","Solicitudes de retiro"],["reviews","Nuevas reseñas"]].map(([k,l]) => (
+              {[["emailEach", T.emailCadaTx],["dailyReport", T.reporteDiario],["withdrawReq", T.solicitudesRetiro],["reviews", T.nuevasResenas]].map(([k,l]) => (
                 <div key={k} className="switch-row">
                   <span className="text-sm">{l}</span>
                   <Switch on={sw[k]} onChange={v => setSw(p => ({ ...p, [k]: v }))} />
@@ -748,9 +917,9 @@ function Settings() {
 
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <div className="card">
-            <div className="card-header"><div className="card-title">Distribución de propinas</div></div>
+            <div className="card-header"><div className="card-title">{T.distPropinas}</div></div>
             <div className="card-body">
-              {[["individual","Individual","Cada empleado recibe sus propias propinas"],["team","Equipo","Todas van a un fondo común"],["split","División","Parte se comparte con otros"]].map(([v,l,d]) => (
+              {[["individual", T.individual, T.descIndividual],["team", T.equipo, T.descEquipo],["split", T.division, T.descDivision]].map(([v,l,d]) => (
                 <div key={v} style={{ padding: "12px 14px", border: `1.5px solid ${splitMode === v ? "var(--c-accent)" : "var(--c-border)"}`, borderRadius: "var(--r-sm)", marginBottom: 8, cursor: "pointer", background: splitMode === v ? "var(--c-accent-light)" : "white", transition: "all 0.15s" }}
                   onClick={() => setSplitMode(v)}>
                   <div className="flex items-center gap-8">
@@ -766,31 +935,31 @@ function Settings() {
               ))}
               {splitMode === "split" && (
                 <div style={{ padding: "12px 14px", background: "var(--c-bg)", borderRadius: "var(--r-sm)", marginTop: 8 }}>
-                  <div className="text-xs font-600 text-2 mb-8">Reglas de división</div>
-                  {[["Bartender", "10%"], ["Cocina", "5%"]].map(([r, p]) => (
+                  <div className="text-xs font-600 text-2 mb-8">{T.reglasDivision}</div>
+                  {[["Bartender", "10%"], [lang === "es" ? "Cocina" : "Kitchen", "5%"]].map(([r, p]) => (
                     <div key={r} className="flex items-center gap-8 mb-6">
                       <input className="input" defaultValue={r} style={{ flex: 1 }} />
                       <input className="input" defaultValue={p} style={{ width: 64 }} />
                       <button className="btn btn-ghost btn-icon text-red" style={{ flexShrink: 0 }}>×</button>
                     </div>
                   ))}
-                  <button className="btn btn-ghost btn-sm text-accent">+ Agregar regla</button>
+                  <button className="btn btn-ghost btn-sm text-accent">{T.agregarRegla}</button>
                 </div>
               )}
             </div>
           </div>
 
           <div className="card">
-            <div className="card-header"><div className="card-title">Diseño de página</div></div>
+            <div className="card-header"><div className="card-title">{T.disenoPagina}</div></div>
             <div className="card-body">
-              <div className="field"><label className="label">Logotipo</label><div style={{ padding: "20px", border: "2px dashed var(--c-border)", borderRadius: "var(--r-sm)", textAlign: "center", cursor: "pointer" }}>
-                <div className="text-xs text-3">Arrastra el archivo o haz clic</div>
-                <div className="text-xs text-3 mt-4">PNG, SVG · hasta 2 MB</div>
+              <div className="field"><label className="label">{T.logotipo}</label><div style={{ padding: "20px", border: "2px dashed var(--c-border)", borderRadius: "var(--r-sm)", textAlign: "center", cursor: "pointer" }}>
+                <div className="text-xs text-3">{T.arrastraArchivo}</div>
+                <div className="text-xs text-3 mt-4">{T.limitePNG}</div>
               </div></div>
-              <div className="field"><label className="label">Color de acento</label>
+              <div className="field"><label className="label">{T.colorAcento}</label>
                 <div className="flex gap-8">{["#1A56DB","#0D9488","#7C3AED","#D97706","#DC2626"].map(c => <div key={c} style={{ width: 28, height: 28, borderRadius: 6, background: c, cursor: "pointer", border: c === "#1A56DB" ? "2px solid var(--c-text)" : "2px solid transparent" }} />)}</div>
               </div>
-              <button className="btn btn-secondary btn-sm">Vista previa de página</button>
+              <button className="btn btn-secondary btn-sm">{T.vistaPreviaBtn}</button>
             </div>
           </div>
         </div>
@@ -801,6 +970,8 @@ function Settings() {
 
 // ─── WITHDRAW ─────────────────────────────────────────────────────────────────
 function Withdraw() {
+  const lang = useContext(LangCtx);
+  const T = TRANSLATIONS[lang];
   const [emp, setEmp] = useState(EMPLOYEES[0]);
   return (
     <div className="anim-fadeup">
@@ -808,34 +979,34 @@ function Withdraw() {
         <div>
           <div className="card mb-16" style={{ background: "linear-gradient(135deg, #1A56DB 0%, #0D9488 100%)", border: "none", color: "white" }}>
             <div className="card-body">
-              <div className="text-sm" style={{ opacity: 0.8 }}>Disponible para retirar</div>
+              <div className="text-sm" style={{ opacity: 0.8 }}>{T.disponible}</div>
               <div style={{ fontFamily: "var(--font-display)", fontSize: 40, fontWeight: 800, letterSpacing: "-0.03em", marginTop: 4 }}>{fmt(emp.totalTips)}</div>
-              <div className="text-sm mt-8" style={{ opacity: 0.8 }}>Empleado: {emp.name}</div>
+              <div className="text-sm mt-8" style={{ opacity: 0.8 }}>{T.colEmpleado}: {emp.name}</div>
             </div>
           </div>
           <div className="card">
-            <div className="card-header"><div className="card-title">Solicitud de retiro</div></div>
+            <div className="card-header"><div className="card-title">{T.solRetiro}</div></div>
             <div className="card-body">
-              <div className="field"><label className="label">Empleado</label>
+              <div className="field"><label className="label">{T.colEmpleado}</label>
                 <select className="input select" onChange={e => setEmp(EMPLOYEES.find(em => em.id === e.target.value))}>
                   {EMPLOYEES.map(e => <option key={e.id} value={e.id}>{e.name} — {fmt(e.totalTips)}</option>)}
                 </select>
               </div>
-              <div className="field"><label className="label">Monto</label><input className="input" placeholder={`Hasta ${fmt(emp.totalTips)}`} type="number" /></div>
-              <div className="field"><label className="label">Método</label>
-                <select className="input select"><option>Pago Móvil</option><option>Zelle</option><option>Zinli</option><option>Binance Pay</option><option>Transferencia bancaria</option></select>
+              <div className="field"><label className="label">{T.colMonto}</label><input className="input" placeholder={`${T.hasta} ${fmt(emp.totalTips)}`} type="number" /></div>
+              <div className="field"><label className="label">{T.metodo}</label>
+                <select className="input select">{T.metodos.map(m => <option key={m}>{m}</option>)}</select>
               </div>
-              <div className="field"><label className="label">Datos</label><input className="input" placeholder="+58 412 000-00-00 o usuario de Zelle" /></div>
-              <button className="btn btn-primary btn-full btn-lg">Retirar fondos</button>
-              <div className="text-xs text-3 text-center mt-8">Acreditación en 1 día hábil</div>
+              <div className="field"><label className="label">{T.datos}</label><input className="input" placeholder={T.datosPlaceholder} /></div>
+              <button className="btn btn-primary btn-full btn-lg">{T.retirarFondos}</button>
+              <div className="text-xs text-3 text-center mt-8">{T.acreditacion}</div>
             </div>
           </div>
         </div>
         <div className="card">
-          <div className="card-header"><div className="card-title">Historial de retiros</div></div>
+          <div className="card-header"><div className="card-title">{T.historialRetiros}</div></div>
           <div className="table-wrap">
             <table className="table">
-              <thead><tr><th>Empleado</th><th>Monto</th><th>Método</th><th>Fecha</th><th>Estado</th></tr></thead>
+              <thead><tr><th>{T.colEmpleado}</th><th>{T.colMonto}</th><th>{T.colMetodo}</th><th>{T.colFecha}</th><th>{T.colEstado}</th></tr></thead>
               <tbody>
                 {[["e3","48.00","Pago Móvil","2026-02-20","done"],["e1","32.00","Zelle","2026-02-15","done"],["e2","21.00","Pago Móvil","2026-02-10","done"],["e4","15.00","Pago Móvil","2026-02-05","pending"]].map(([id,amt,method,date,status]) => {
                   const e = EMPLOYEES.find(em => em.id === id);
@@ -845,7 +1016,7 @@ function Withdraw() {
                       <td><span className="font-600 text-green">−${amt}</span></td>
                       <td className="text-sm text-2">{method}</td>
                       <td className="text-xs text-3">{new Date(date).toLocaleDateString("es-VE")}</td>
-                      <td><span className={`badge ${status === "done" ? "badge-green" : "badge-amber"}`}>{status === "done" ? "✓ Pagado" : "⏳ En proceso"}</span></td>
+                      <td><span className={`badge ${status === "done" ? "badge-green" : "badge-amber"}`}>{status === "done" ? T.pagado : T.enProceso}</span></td>
                     </tr>
                   );
                 })}
@@ -858,52 +1029,84 @@ function Withdraw() {
   );
 }
 
+// ─── LANG DROPDOWN ────────────────────────────────────────────────────────────
+function LangDropdown({ lang, setLang }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  useEffect(() => {
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+  const opts = [{ code: "es", flag: "🇻🇪", label: "Español" }, { code: "en", flag: "🇺🇸", label: "English" }];
+  const current = opts.find(o => o.code === lang);
+  return (
+    <div ref={ref} style={{ position: "relative" }}>
+      <button className="btn btn-secondary btn-sm" onClick={() => setOpen(v => !v)} style={{ gap: 6, minWidth: 80 }}>
+        <span>{current.flag}</span> <span>{current.label}</span> <span style={{ fontSize: 10, opacity: 0.6 }}>▾</span>
+      </button>
+      {open && (
+        <div style={{ position: "absolute", top: "calc(100% + 6px)", right: 0, background: "white", border: "1px solid var(--c-border)", borderRadius: "var(--r-sm)", boxShadow: "var(--shadow-md)", zIndex: 200, minWidth: 130, overflow: "hidden" }}>
+          {opts.map(o => (
+            <button key={o.code} onClick={() => { setLang(o.code); setOpen(false); }}
+              style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "9px 14px", background: o.code === lang ? "var(--c-accent-light)" : "transparent", border: "none", cursor: "pointer", fontSize: 13, fontWeight: o.code === lang ? 600 : 400, color: o.code === lang ? "var(--c-accent)" : "var(--c-text)" }}>
+              <span>{o.flag}</span> {o.label} {o.code === lang && <span style={{ marginLeft: "auto" }}>✓</span>}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── APP ──────────────────────────────────────────────────────────────────────
 export default function App() {
   const [view, setView] = useState("overview");
   const [tipEmployee, setTipEmployee] = useState(EMPLOYEES[0]);
+  const [lang, setLang] = useState("es");
+  const T = TRANSLATIONS[lang];
 
   const navItems = [
-    { id: "overview", icon: "◈", label: "Resumen" },
-    { id: "employees", icon: "◉", label: "Personal" },
-    { id: "analytics", icon: "↗", label: "Analítica" },
-    { id: "withdraw", icon: "$", label: "Retiros" },
-    { id: "settings", icon: "⊕", label: "Configuración" },
+    { id: "overview", icon: "◈", label: T.resumen },
+    { id: "employees", icon: "◉", label: T.personal },
+    { id: "analytics", icon: "↗", label: T.analitica },
+    { id: "withdraw", icon: "$", label: T.retiros },
+    { id: "settings", icon: "⊕", label: T.configuracion },
   ];
 
-  const heading = { overview: "Resumen", employees: "Personal", analytics: "Analítica", withdraw: "Retiros", settings: "Configuración", tip: "Página de propina" };
+  const heading = { overview: T.resumen, employees: T.personal, analytics: T.analitica, withdraw: T.retiros, settings: T.configuracion, tip: T.paginaInvitado };
 
   if (view === "tip") return (
-    <>
+    <LangCtx.Provider value={lang}>
       <style>{CSS}</style>
       <div style={{ position: "fixed", top: 12, left: 12, zIndex: 999 }}>
-        <button className="btn btn-secondary btn-sm" onClick={() => setView("employees")} style={{ boxShadow: "var(--shadow-md)" }}>← Volver</button>
+        <button className="btn btn-secondary btn-sm" onClick={() => setView("employees")} style={{ boxShadow: "var(--shadow-md)" }}>{T.volver}</button>
       </div>
       <TipPage employee={tipEmployee} billAmount={40} onBack={() => setView("employees")} />
-    </>
+    </LangCtx.Provider>
   );
 
   return (
-    <>
+    <LangCtx.Provider value={lang}>
       <style>{CSS}</style>
       <div className="shell">
         <aside className="sidebar">
           <div className="sidebar-logo">
             <div className="logo-mark">
               <div className="logo-icon">🪙</div>
-              <div><div className="logo-name">Propinero</div><div className="logo-sub">Propinas digitales</div></div>
+              <div><div className="logo-name">Propinero</div><div className="logo-sub">{lang === "es" ? "Propinas digitales" : "Digital tips"}</div></div>
             </div>
           </div>
           <nav className="sidebar-nav">
-            <div className="nav-section-label">Panel</div>
+            <div className="nav-section-label">{T.panel}</div>
             {navItems.map(item => (
               <button key={item.id} className={`nav-item ${view === item.id ? "active" : ""}`} onClick={() => setView(item.id)}>
                 <span className="nav-icon">{item.icon}</span>{item.label}
               </button>
             ))}
-            <div className="nav-section-label" style={{ marginTop: 8 }}>Demo</div>
+            <div className="nav-section-label" style={{ marginTop: 8 }}>{T.demo}</div>
             <button className="nav-item" onClick={() => { setTipEmployee(EMPLOYEES[0]); setView("tip"); }}>
-              <span className="nav-icon">↗</span>Página de invitado
+              <span className="nav-icon">↗</span>{T.paginaInvitado}
             </button>
           </nav>
           <div className="sidebar-footer">
@@ -922,14 +1125,15 @@ export default function App() {
             <div className="page-heading">{heading[view]}</div>
             <div className="topbar-actions">
               <button className="btn btn-secondary btn-sm">🔔</button>
-              <button className="btn btn-secondary btn-sm">? Ayuda</button>
+              <LangDropdown lang={lang} setLang={setLang} />
+              <button className="btn btn-secondary btn-sm">? {T.ayuda}</button>
               <button className="btn btn-primary btn-sm" onClick={() => { setTipEmployee(EMPLOYEES[0]); setView("tip"); }}>
-                Demo página de invitado ↗
+                {T.demoBtn}
               </button>
             </div>
           </header>
           <main className="content">
-            {view === "overview" && <Overview setView={setView} setTipEmployee={setTipEmployee} />}
+            {view === "overview" && <Overview setView={setView} />}
             {view === "employees" && <Employees setTipEmployee={setTipEmployee} setView={setView} />}
             {view === "analytics" && <Analytics />}
             {view === "withdraw" && <Withdraw />}
@@ -937,6 +1141,6 @@ export default function App() {
           </main>
         </div>
       </div>
-    </>
+    </LangCtx.Provider>
   );
 }
