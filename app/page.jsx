@@ -82,6 +82,15 @@ const TRANSLATIONS = {
     gracias: "¡Gracias!",
     propinasEnviadas: "Tu propina y reseña fueron enviadas.",
     nochesMejor: "Hiciste la noche mejor ✨",
+    // Phase 2 – currency
+    enUSD: "USD", enBs: "Bs.D", tasaAprox: "Tasa BCV aprox.",
+    // Phase 2 – payment step
+    elegirMetodo: "¿Cómo vas a pagar?",
+    instruccionesPago: "Instrucciones de pago",
+    pagoP2P: "Pago directo al empleado (P2P)",
+    realizaTransf: "Realiza la transferencia por el monto exacto y luego confirma.",
+    yaPague: "Ya pagué ✓",
+    metodoPagoMobil: "Teléfono", metodoPagoZelle: "Correo", metodoPagoZinli: "Usuario", metodoPagoBinance: "ID Binance",
   },
   en: {
     // Nav
@@ -160,6 +169,15 @@ const TRANSLATIONS = {
     gracias: "Thank you!",
     propinasEnviadas: "Your tip and review were sent.",
     nochesMejor: "You made the evening better ✨",
+    // Phase 2 – currency
+    enUSD: "USD", enBs: "Bs.D", tasaAprox: "Approx. BCV rate",
+    // Phase 2 – payment step
+    elegirMetodo: "How do you want to pay?",
+    instruccionesPago: "Payment instructions",
+    pagoP2P: "Direct payment to the employee (P2P)",
+    realizaTransf: "Send the exact amount and then confirm.",
+    yaPague: "I've paid ✓",
+    metodoPagoMobil: "Phone", metodoPagoZelle: "Email", metodoPagoZinli: "Username", metodoPagoBinance: "Binance ID",
   },
 };
 
@@ -182,6 +200,17 @@ const TRANSACTIONS = [
 
 const fmt = (n) => n == null ? "$0.00" : "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtDate = (d) => d ? new Date(d).toLocaleString("es-VE", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : "—";
+
+// ─── PHASE 2 CONSTANTS ────────────────────────────────────────────────────────
+const BS_RATE = 36.50; // USD → Bs.D (tasa BCV aprox.)
+const fmtBs = (n) => n == null ? "Bs.0,00" : "Bs." + (n * BS_RATE).toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+const PAYMENT_METHODS = [
+  { id: "pagomovil", label: "Pago Móvil", emoji: "📱", color: "#059669", fieldKey: "metodoPagoMobil", value: "0412-000-0000 · Banco de Venezuela" },
+  { id: "zelle",     label: "Zelle",       emoji: "💜", color: "#6D28D9", fieldKey: "metodoPagoZelle",   value: "pagos@restomilano.com" },
+  { id: "zinli",     label: "Zinli",       emoji: "💳", color: "#0891B2", fieldKey: "metodoPagoZinli",   value: "@restomilano" },
+  { id: "binance",   label: "Binance Pay", emoji: "🟡", color: "#D97706", fieldKey: "metodoPagoBinance", value: "ID: 312 456 789" },
+];
 
 // ─── MINI QR ──────────────────────────────────────────────────────────────────
 function QRSvg({ value, size = 100, light = false }) {
@@ -475,38 +504,67 @@ function Modal({ title, onClose, children, footer }) {
 }
 
 // ─── TIP PAGE (гостевая страница) ────────────────────────────────────────────
-function TipPage({ employee, billAmount = 3200, onBack }) {
+function TipPage({ employee, billAmount = 40, onBack }) {
   const lang = useContext(LangCtx);
   const T = TRANSLATIONS[lang];
-  const [step, setStep] = useState("tips"); // tips | review | success
-  const [mode, setMode] = useState("pct"); // pct | fixed
+  const [step, setStep] = useState("tips"); // tips | payment | review | success
+  const [mode, setMode] = useState("pct");
   const [pct, setPct] = useState(10);
   const [fixed, setFixed] = useState(5);
   const [customFixed, setCustomFixed] = useState("");
+  const [currency, setCurrency] = useState("USD"); // USD | BS
+  const [payMethod, setPayMethod] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [comment, setComment] = useState("");
   const [platform, setPlatform] = useState(null);
-  const [loading, setLoading] = useState(false);
 
-  const calcAmount = mode === "pct" ? Math.round(billAmount * pct / 100 * 100) / 100 : (customFixed ? parseFloat(customFixed) || 0 : fixed);
   const PCTS = [5, 10, 15, 20];
   const FIXED = [1, 2, 5, 10, 20];
 
-  const pay = () => {
+  const calcUSD = mode === "pct"
+    ? Math.round(billAmount * pct / 100 * 100) / 100
+    : (customFixed ? parseFloat(customFixed) || 0 : fixed);
+
+  // display helpers — show in chosen currency
+  const fmtD = (n) => currency === "USD" ? fmt(n) : fmtBs(n);
+  const fmtBill = fmtD(billAmount);
+  const fmtCalc = fmtD(calcUSD);
+  const fmtPctHint = (p) => fmtD(Math.round(billAmount * p / 100 * 100) / 100);
+
+  const goToPayment = () => setStep("payment");
+  const confirmPayment = () => {
     setLoading(true);
     setTimeout(() => { setLoading(false); setStep("review"); }, 1600);
   };
   const finish = () => setStep("success");
 
+  // ── Currency toggle pill ──
+  const CurrencyToggle = () => (
+    <div style={{ display: "flex", background: "rgba(255,255,255,0.15)", borderRadius: 20, padding: 3, gap: 3 }}>
+      {["USD", "BS"].map(c => (
+        <button key={c} onClick={() => setCurrency(c)}
+          style={{ padding: "4px 12px", borderRadius: 16, border: "none", cursor: "pointer", fontSize: 11, fontWeight: 700, fontFamily: "var(--font)",
+            background: currency === c ? "white" : "transparent",
+            color: currency === c ? "var(--c-accent)" : "rgba(255,255,255,0.75)",
+            transition: "all 0.15s" }}>
+          {c === "USD" ? T.enUSD : T.enBs}
+        </button>
+      ))}
+    </div>
+  );
+
   return (
     <div className="tip-shell">
       <div className="tip-card anim-fadeup">
+
+        {/* ── STEP 1: Choose amount ── */}
         {step === "tips" && <>
           <div className="tip-header">
             <Avatar initials={employee.initials} size={64} />
             <div className="mt-12">
-              <div style={{ fontSize: 20, fontFamily: "var(--font-display)", fontWeight: 700 }}>{employee.name}</div>
+              <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.02em" }}>{employee.name}</div>
               <div style={{ fontSize: 13, opacity: 0.8, marginTop: 2 }}>{employee.role} · Resto Milano</div>
             </div>
             {employee.bio && <div style={{ marginTop: 10, fontSize: 12, opacity: 0.7, background: "rgba(255,255,255,0.12)", padding: "8px 12px", borderRadius: 8 }}>💬 {employee.bio}</div>}
@@ -515,12 +573,16 @@ function TipPage({ employee, billAmount = 3200, onBack }) {
               <span style={{ fontSize: 13, opacity: 0.9, fontWeight: 600 }}>{employee.rating}</span>
               <span style={{ fontSize: 12, opacity: 0.6 }}>({employee.txCount} {T.resenas})</span>
             </div>
+            <div className="mt-12"><CurrencyToggle /></div>
           </div>
 
           <div className="tip-body">
-            <div style={{ background: "#F8F9FB", borderRadius: 10, padding: "10px 14px", marginBottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ background: "var(--c-bg)", borderRadius: 10, padding: "10px 14px", marginBottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span className="text-sm text-2">{T.totalCuenta}</span>
-              <span className="font-600">{fmt(billAmount)}</span>
+              <div style={{ textAlign: "right" }}>
+                <span className="font-700">{fmtBill}</span>
+                {currency === "BS" && <div style={{ fontSize: 10, color: "var(--c-text-3)", marginTop: 1 }}>{T.tasaAprox} Bs.{BS_RATE.toFixed(2)}/$</div>}
+              </div>
             </div>
 
             <div className="tab-row">
@@ -531,31 +593,36 @@ function TipPage({ employee, billAmount = 3200, onBack }) {
             {mode === "pct" ? (
               <div className="pct-grid">{PCTS.map(p => (
                 <button key={p} className={`pct-btn ${pct === p ? "active" : ""}`} onClick={() => setPct(p)}>
-                  {p}%<br /><span style={{ fontSize: 11, fontWeight: 500 }}>{fmt(Math.round(billAmount * p / 100))}</span>
+                  {p}%<br /><span style={{ fontSize: 11, fontWeight: 500 }}>{fmtPctHint(p)}</span>
                 </button>
               ))}</div>
             ) : (
               <>
                 <div className="amount-grid">
-                  {FIXED.slice(0, 5).map(a => (
+                  {FIXED.map(a => (
                     <button key={a} className={`amount-btn ${fixed === a && !customFixed ? "active" : ""}`} onClick={() => { setFixed(a); setCustomFixed(""); }}>
-                      ${a}
+                      {fmtD(a)}
                     </button>
                   ))}
                 </div>
-                <input className="input" placeholder={lang === "es" ? "Otro monto, $" : "Other amount, $"} type="number" value={customFixed} onChange={e => setCustomFixed(e.target.value)} />
+                <input className="input" placeholder={lang === "es" ? `Otro monto, ${currency === "USD" ? "$" : "Bs."}` : `Other amount, ${currency === "USD" ? "$" : "Bs."}`} type="number" value={customFixed} onChange={e => setCustomFixed(e.target.value)} />
               </>
             )}
 
-            {calcAmount > 0 && (
-              <div style={{ marginTop: 16, padding: "14px 16px", background: "var(--c-accent-light)", borderRadius: 10, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span className="text-sm font-600 text-accent">{T.totalPropina}</span>
-                <span style={{ fontFamily: "var(--font-display)", fontSize: 22, fontWeight: 700, color: "var(--c-accent)" }}>{fmt(calcAmount)}</span>
+            {calcUSD > 0 && (
+              <div style={{ marginTop: 16, padding: "14px 16px", background: "var(--c-accent-light)", borderRadius: 10 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span className="text-sm font-600 text-accent">{T.totalPropina}</span>
+                  <span style={{ fontSize: 22, fontWeight: 800, color: "var(--c-accent)", letterSpacing: "-0.02em" }}>{fmtCalc}</span>
+                </div>
+                {currency === "BS" && (
+                  <div style={{ marginTop: 4, fontSize: 11, color: "var(--c-accent)", opacity: 0.7, textAlign: "right" }}>{fmt(calcUSD)} USD</div>
+                )}
               </div>
             )}
 
-            <button className="btn btn-primary btn-full btn-lg mt-16" onClick={pay} disabled={!calcAmount || loading}>
-              {loading ? <span style={{ display: "flex", alignItems: "center", gap: 8 }}><span style={{ width: 16, height: 16, border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "white", borderRadius: "50%", animation: "spin 0.6s linear infinite", display: "inline-block" }} />{T.procesando}</span> : `${T.pagar} ${calcAmount ? fmt(calcAmount) : ""}`}
+            <button className="btn btn-primary btn-full btn-lg mt-16" onClick={goToPayment} disabled={!calcUSD}>
+              {`${T.pagar} ${calcUSD ? fmtCalc : ""}`}
             </button>
             <button className="btn btn-ghost btn-full mt-6" style={{ color: "var(--c-text-3)", fontSize: 12 }}>{T.sinPropina}</button>
           </div>
@@ -565,13 +632,72 @@ function TipPage({ employee, billAmount = 3200, onBack }) {
           </div>
         </>}
 
+        {/* ── STEP 2: Choose payment method ── */}
+        {step === "payment" && (
+          <div className="anim-fadeup">
+            <div className="tip-header" style={{ padding: "20px 24px 16px" }}>
+              <div style={{ fontSize: 13, opacity: 0.8 }}>{employee.name} · {employee.role}</div>
+              <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: "-0.03em", marginTop: 6 }}>{fmtD(calcUSD)}</div>
+              {currency === "BS" && <div style={{ fontSize: 12, opacity: 0.65, marginTop: 2 }}>{fmt(calcUSD)} USD</div>}
+              <div style={{ marginTop: 8 }}><CurrencyToggle /></div>
+            </div>
+            <div className="tip-body">
+              <div className="text-sm font-700 mb-12">{T.elegirMetodo}</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {PAYMENT_METHODS.map(m => (
+                  <button key={m.id} onClick={() => setPayMethod(m.id)}
+                    style={{ display: "flex", alignItems: "center", gap: 12, padding: "13px 14px",
+                      border: `1.5px solid ${payMethod === m.id ? m.color : "var(--c-border)"}`,
+                      borderRadius: "var(--r-sm)", background: payMethod === m.id ? `${m.color}12` : "white",
+                      cursor: "pointer", fontFamily: "var(--font)", transition: "all 0.15s", textAlign: "left" }}>
+                    <span style={{ fontSize: 22, lineHeight: 1 }}>{m.emoji}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "var(--c-text)" }}>{m.label}</div>
+                      <div style={{ fontSize: 11, color: "var(--c-text-3)", marginTop: 1 }}>{T[m.fieldKey]}: {m.value}</div>
+                    </div>
+                    {payMethod === m.id && (
+                      <span style={{ width: 20, height: 20, borderRadius: "50%", background: m.color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "white", flexShrink: 0 }}>✓</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+
+              {payMethod && (() => {
+                const m = PAYMENT_METHODS.find(x => x.id === payMethod);
+                return (
+                  <div style={{ marginTop: 16, padding: "14px 16px", background: "var(--c-bg)", borderRadius: 10, border: "1px solid var(--c-border)" }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: "var(--c-text-2)", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.05em" }}>{T.instruccionesPago}</div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                      <span style={{ fontSize: 12, color: "var(--c-text-3)" }}>{T[m.fieldKey]}</span>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: "var(--c-text)" }}>{m.value}</span>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                      <span style={{ fontSize: 12, color: "var(--c-text-3)" }}>{T.totalPropina}</span>
+                      <span style={{ fontSize: 15, fontWeight: 800, color: "var(--c-accent)" }}>{fmtD(calcUSD)}{currency === "BS" ? ` (${fmt(calcUSD)})` : ""}</span>
+                    </div>
+                    <div style={{ fontSize: 11, color: "var(--c-text-3)", marginTop: 8, lineHeight: 1.5 }}>💡 {T.realizaTransf}</div>
+                  </div>
+                );
+              })()}
+
+              <button className="btn btn-primary btn-full btn-lg mt-16" onClick={confirmPayment} disabled={!payMethod || loading}>
+                {loading
+                  ? <span style={{ display: "flex", alignItems: "center", gap: 8 }}><span style={{ width: 16, height: 16, border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "white", borderRadius: "50%", animation: "spin 0.6s linear infinite", display: "inline-block" }} />{T.procesando}</span>
+                  : T.yaPague}
+              </button>
+              <button className="btn btn-ghost btn-full mt-6" style={{ fontSize: 12 }} onClick={() => setStep("tips")}>{T.volver}</button>
+            </div>
+          </div>
+        )}
+
+        {/* ── STEP 3: Rate & review ── */}
         {step === "review" && (
           <div className="tip-body anim-fadeup" style={{ padding: "32px 28px" }}>
             <div className="success-check">🎉</div>
-            <div className="font-display font-700 text-xl text-center">{fmt(calcAmount)} {T.enviado}</div>
+            <div style={{ fontSize: 20, fontWeight: 800, textAlign: "center", letterSpacing: "-0.02em" }}>{fmtD(calcUSD)} {T.enviado}</div>
             <div className="text-center text-sm text-2 mt-6">{employee.name} {T.recibiraPropina}</div>
             <div className="divider" style={{ margin: "20px 0" }} />
-            <div className="text-sm font-600 mb-12 text-center">{T.comoServicio}</div>
+            <div className="text-sm font-700 mb-12 text-center">{T.comoServicio}</div>
             <div className="flex gap-8" style={{ justifyContent: "center", marginBottom: 16 }}>
               {[1,2,3,4,5].map(s => (
                 <span key={s} style={{ fontSize: 32, cursor: "pointer", filter: s <= (hoverRating || rating) ? "none" : "grayscale(1)", transition: "transform 0.1s", transform: s <= (hoverRating || rating) ? "scale(1.2)" : "scale(1)" }}
@@ -583,7 +709,7 @@ function TipPage({ employee, billAmount = 3200, onBack }) {
               <>
                 <div className="text-xs text-3 text-center mb-8">{T.dejaResena}</div>
                 <div className="review-platforms">
-                  {[{ id: "google", label: "Google Maps", emoji: "🗺", color: "#4285F4" }, { id: "tripadvisor", label: "TripAdvisor", emoji: "🦉", color: "#00AA6C" }].map(p => (
+                  {[{ id: "google", label: "Google Maps", emoji: "🗺" }, { id: "tripadvisor", label: "TripAdvisor", emoji: "🦉" }].map(p => (
                     <button key={p.id} className={`platform-btn ${platform === p.id ? "active" : ""}`} onClick={() => setPlatform(p.id)}>
                       <span style={{ fontSize: 18 }}>{p.emoji}</span>
                       <span>{p.label}</span>
@@ -598,10 +724,11 @@ function TipPage({ employee, billAmount = 3200, onBack }) {
           </div>
         )}
 
+        {/* ── STEP 4: Success ── */}
         {step === "success" && (
           <div className="tip-body anim-fadeup" style={{ padding: "48px 28px", textAlign: "center" }}>
             <div style={{ width: 72, height: 72, background: "linear-gradient(135deg,#92400E,#D97706)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, margin: "0 auto 20px", boxShadow: "0 8px 24px rgba(217,119,6,0.35)" }}>✓</div>
-            <div className="font-display font-700 text-2xl" style={{ color: "var(--c-text)" }}>{T.gracias}</div>
+            <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: "-0.03em" }}>{T.gracias}</div>
             <div className="text-sm text-2 mt-8" style={{ lineHeight: 1.7 }}>{T.propinasEnviadas}<br />{T.nochesMejor}</div>
             <button className="btn btn-secondary mt-24" onClick={onBack}>{T.volver}</button>
           </div>
