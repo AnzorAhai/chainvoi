@@ -91,6 +91,24 @@ const TRANSLATIONS = {
     realizaTransf: "Realiza la transferencia por el monto exacto y luego confirma.",
     yaPague: "Ya pagué ✓",
     metodoPagoMobil: "Teléfono", metodoPagoZelle: "Correo", metodoPagoZinli: "Usuario", metodoPagoBinance: "ID Binance",
+    // POS Integration
+    posIntegracion: "Integración con POS",
+    posDescripcion: "Conecta Propinero con tu sistema de punto de venta para imprimir el QR directamente en el cheque.",
+    apiKey: "API Key", webhookUrl: "Webhook URL",
+    copiarApiKey: "Copiar", regenerar: "Regenerar",
+    probarConexion: "Probar conexión", conexionOk: "✓ Conexión exitosa",
+    agenteTitulo: "ESC/POS Print Agent",
+    agenteDesc: "Instala el agente en la PC de caja. Intercepta los trabajos de impresión y añade el QR al final de cada cheque automáticamente.",
+    descargarAgente: "⬇ Descargar agente (.exe)",
+    posCompatibles: "Sistemas compatibles",
+    posManual: "Sin POS (estático)", posManualDesc: "QR estático · el cliente ingresa el monto",
+    posWebhook: "Webhook genérico", posWebhookDesc: "Cualquier POS con soporte de webhooks",
+    posEscPos: "ESC/POS Agente local", posEscPosDesc: "~90% de impresoras térmicas en Venezuela",
+    posProfitPlus: "Profit Plus", posProfitPlusDesc: "Sistema más usado en Venezuela",
+    posRestArt: "Rest-Art", posRestArtDesc: "Gestión para restaurantes",
+    posIiko: "iiko", posIikoDesc: "Cadenas y restaurantes premium",
+    estadoConectado: "Conectado", estadoNoConectado: "No conectado",
+    instrucciones: "Cómo conectar", paso: "Paso",
   },
   en: {
     // Nav
@@ -178,6 +196,24 @@ const TRANSLATIONS = {
     realizaTransf: "Send the exact amount and then confirm.",
     yaPague: "I've paid ✓",
     metodoPagoMobil: "Phone", metodoPagoZelle: "Email", metodoPagoZinli: "Username", metodoPagoBinance: "Binance ID",
+    // POS Integration
+    posIntegracion: "POS Integration",
+    posDescripcion: "Connect Propinero to your point-of-sale system to print the QR code directly on the receipt.",
+    apiKey: "API Key", webhookUrl: "Webhook URL",
+    copiarApiKey: "Copy", regenerar: "Regenerate",
+    probarConexion: "Test connection", conexionOk: "✓ Connection successful",
+    agenteTitulo: "ESC/POS Print Agent",
+    agenteDesc: "Install the agent on the cashier PC. It intercepts print jobs and automatically appends the QR to every receipt.",
+    descargarAgente: "⬇ Download agent (.exe)",
+    posCompatibles: "Compatible systems",
+    posManual: "No POS (static)", posManualDesc: "Static QR · guest enters the amount",
+    posWebhook: "Generic webhook", posWebhookDesc: "Any POS with webhook support",
+    posEscPos: "ESC/POS Local Agent", posEscPosDesc: "~90% of thermal printers in Venezuela",
+    posProfitPlus: "Profit Plus", posProfitPlusDesc: "Most-used management system in Venezuela",
+    posRestArt: "Rest-Art", posRestArtDesc: "Restaurant management",
+    posIiko: "iiko", posIikoDesc: "Chains and premium restaurants",
+    estadoConectado: "Connected", estadoNoConectado: "Not connected",
+    instrucciones: "How to connect", paso: "Step",
   },
 };
 
@@ -1019,6 +1055,148 @@ function Analytics() {
 }
 
 // ─── SETTINGS ────────────────────────────────────────────────────────────────
+// ─── POS INTEGRATION CARD ─────────────────────────────────────────────────────
+const MOCK_API_KEY = "pk_live_propinero_restomilano_a7f3d9e2";
+const MOCK_WEBHOOK  = "https://propinero.app/api/pos/order";
+
+const POS_SYSTEMS = [
+  { key: "manual",     icon: "⬜", color: "#8A94A6", connected: true  },
+  { key: "escpos",     icon: "🖨",  color: "#D97706", connected: false },
+  { key: "webhook",    icon: "🔗", color: "#7C3AED", connected: false },
+  { key: "profitplus", icon: "🇻🇪", color: "#059669", connected: false },
+  { key: "restArt",    icon: "🍽",  color: "#0891B2", connected: false },
+  { key: "iiko",       icon: "⚡", color: "#DC2626", connected: false },
+];
+
+function PosIntegrationCard() {
+  const lang = useContext(LangCtx);
+  const T = TRANSLATIONS[lang];
+  const [copied, setCopied] = useState(false);
+  const [tested, setTested] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [expanded, setExpanded] = useState(null); // key of expanded system
+
+  const copy = (text) => {
+    navigator.clipboard?.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  const test = () => {
+    setTesting(true);
+    setTimeout(() => { setTesting(false); setTested(true); }, 1400);
+  };
+
+  const labelFor = (key) => ({
+    manual:     [T.posManual,     T.posManualDesc],
+    escpos:     [T.posEscPos,     T.posEscPosDesc],
+    webhook:    [T.posWebhook,    T.posWebhookDesc],
+    profitplus: [T.posProfitPlus, T.posProfitPlusDesc],
+    restArt:    [T.posRestArt,    T.posRestArtDesc],
+    iiko:       [T.posIiko,       T.posIikoDesc],
+  }[key] || ["", ""]);
+
+  const instructions = {
+    escpos: lang === "es"
+      ? ["Descarga el agente e instálalo en la PC de la caja", "El agente crea un puerto de impresora virtual (ej: COM8)", "En tu POS, selecciona ese puerto como impresora", "Cada cheque que se imprima recibirá el QR de Propinero automáticamente"]
+      : ["Download the agent and install it on the cashier PC", "The agent creates a virtual printer port (e.g. COM8)", "In your POS, select that port as the printer", "Every receipt printed will automatically get the Propinero QR"],
+    webhook: lang === "es"
+      ? ["Copia el Webhook URL de abajo", "En tu POS, configura una notificación POST al cierre de mesa", 'El cuerpo debe incluir: { "tableId", "billAmount", "employeeId" }', "El QR dinámico se devolverá en la respuesta para imprimir"]
+      : ["Copy the Webhook URL below", "In your POS, configure a POST notification on table close", 'The body must include: { "tableId", "billAmount", "employeeId" }', "The dynamic QR will be returned in the response for printing"],
+    profitplus: lang === "es"
+      ? ["En Profit Plus ve a Configuración → Impresión → Complementos", "Agrega el plugin Propinero desde el Marketplace de Profit Plus", "Ingresa tu API Key cuando el plugin lo solicite", "Activa la opción «QR de propina en cheque»"]
+      : ["In Profit Plus go to Settings → Printing → Add-ons", "Add the Propinero plugin from the Profit Plus Marketplace", "Enter your API Key when the plugin asks for it", "Enable the option «Tip QR on receipt»"],
+    restArt: lang === "es"
+      ? ["En Rest-Art ve a Herramientas → Webhooks", "Agrega una nueva acción en evento «Cierre de comanda»", "URL: " + MOCK_WEBHOOK + " · Método: POST", "Incluye tu API Key en el header Authorization"]
+      : ["In Rest-Art go to Tools → Webhooks", "Add a new action on event «Order close»", "URL: " + MOCK_WEBHOOK + " · Method: POST", "Include your API Key in the Authorization header"],
+    iiko: lang === "es"
+      ? ["Instala el plugin Propinero desde iiko Market", "Abre Administración → Propinero → Configuración", "Pega tu API Key y guarda", "El QR aparecerá en el cheque de cada mesa"]
+      : ["Install the Propinero plugin from iiko Market", "Go to Administration → Propinero → Settings", "Paste your API Key and save", "The QR will appear on every table receipt"],
+  };
+
+  return (
+    <div className="card">
+      <div className="card-header">
+        <div className="card-title">{T.posIntegracion}</div>
+        <span className="badge badge-amber">Beta</span>
+      </div>
+      <div className="card-body" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <p className="text-sm text-2">{T.posDescripcion}</p>
+
+        {/* API Key */}
+        <div style={{ background: "var(--c-bg)", borderRadius: "var(--r-sm)", padding: "12px 14px" }}>
+          <div className="label mb-4">{T.apiKey}</div>
+          <div className="flex items-center gap-8">
+            <code style={{ flex: 1, fontSize: 12, fontFamily: "monospace", color: "var(--c-text-2)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{MOCK_API_KEY}</code>
+            <button className="btn btn-secondary btn-sm" onClick={() => copy(MOCK_API_KEY)} style={{ flexShrink: 0 }}>
+              {copied ? "✓" : T.copiarApiKey}
+            </button>
+            <button className="btn btn-ghost btn-sm" style={{ flexShrink: 0 }}>{T.regenerar}</button>
+          </div>
+        </div>
+
+        {/* Webhook URL */}
+        <div style={{ background: "var(--c-bg)", borderRadius: "var(--r-sm)", padding: "12px 14px" }}>
+          <div className="label mb-4">{T.webhookUrl}</div>
+          <div className="flex items-center gap-8">
+            <code style={{ flex: 1, fontSize: 12, fontFamily: "monospace", color: "var(--c-accent)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{MOCK_WEBHOOK}</code>
+            <button className="btn btn-secondary btn-sm" onClick={() => copy(MOCK_WEBHOOK)} style={{ flexShrink: 0 }}>{T.copiarApiKey}</button>
+          </div>
+        </div>
+
+        {/* Test connection */}
+        <div className="flex items-center gap-10">
+          <button className="btn btn-secondary btn-sm" onClick={test} disabled={testing}>
+            {testing ? "…" : T.probarConexion}
+          </button>
+          {tested && <span className="text-sm" style={{ color: "var(--c-green)" }}>{T.conexionOk}</span>}
+        </div>
+
+        <div className="divider" />
+
+        {/* Compatible systems */}
+        <div className="label">{T.posCompatibles}</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          {POS_SYSTEMS.map(({ key, icon, connected }) => {
+            const [name, desc] = labelFor(key);
+            const isOpen = expanded === key;
+            const hasInstructions = !!instructions[key];
+            return (
+              <div key={key} style={{ border: `1px solid ${isOpen ? "var(--c-accent)" : "var(--c-border)"}`, borderRadius: "var(--r-sm)", overflow: "hidden", transition: "border-color 0.15s" }}>
+                <div className="flex items-center gap-10" style={{ padding: "10px 14px", cursor: hasInstructions ? "pointer" : "default", background: isOpen ? "var(--c-accent-light)" : "white" }}
+                  onClick={() => hasInstructions && setExpanded(isOpen ? null : key)}>
+                  <span style={{ fontSize: 18, lineHeight: 1 }}>{icon}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className="text-sm font-600">{name}</div>
+                    <div className="text-xs text-3">{desc}</div>
+                  </div>
+                  <span className="badge" style={{ background: connected ? "var(--c-green-bg)" : "var(--c-bg)", color: connected ? "var(--c-green)" : "var(--c-text-3)", border: connected ? "none" : "1px solid var(--c-border)", flexShrink: 0 }}>
+                    {connected ? T.estadoConectado : T.estadoNoConectado}
+                  </span>
+                  {hasInstructions && <span style={{ fontSize: 12, color: "var(--c-text-3)", flexShrink: 0 }}>{isOpen ? "▲" : "▾"}</span>}
+                </div>
+                {isOpen && instructions[key] && (
+                  <div style={{ padding: "12px 14px 14px", borderTop: "1px solid var(--c-border)", background: "var(--c-bg)" }}>
+                    <div className="text-xs font-600 text-2 mb-10">{T.instrucciones}</div>
+                    {instructions[key].map((step, i) => (
+                      <div key={i} className="flex gap-10" style={{ marginBottom: 8 }}>
+                        <div style={{ width: 20, height: 20, borderRadius: "50%", background: "var(--c-accent)", color: "white", fontSize: 10, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1 }}>{i + 1}</div>
+                        <div className="text-sm text-2" style={{ lineHeight: 1.5 }}>{step}</div>
+                      </div>
+                    ))}
+                    {key === "escpos" && (
+                      <button className="btn btn-primary btn-sm mt-8" style={{ marginTop: 10 }}>{T.descargarAgente}</button>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Settings() {
   const lang = useContext(LangCtx);
   const T = TRANSLATIONS[lang];
@@ -1098,6 +1276,8 @@ function Settings() {
               <button className="btn btn-secondary btn-sm">{T.vistaPreviaBtn}</button>
             </div>
           </div>
+
+          <PosIntegrationCard />
         </div>
       </div>
     </div>

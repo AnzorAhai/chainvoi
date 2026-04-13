@@ -1,0 +1,16 @@
+{
+  "propineroBaseUrl": "https://propinero.app",
+  "apiKey": "pk_live_YOUR_API_KEY_HERE",
+
+  "listenPort": 9100,
+  "listenHost": "127.0.0.1",
+
+  "printerHost": "192.168.1.100",
+  "printerPort": 9100,
+
+  "qrSize": 5,
+  "qrErrorLevel": "M",
+  "footerText": "¡Deja tu propina escaneando el QR! 🙏",
+
+  "defaultEmployeeId": null
+}
